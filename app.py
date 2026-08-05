@@ -2,7 +2,7 @@ import os
 from flask import Flask, redirect, url_for
 from flask_login import current_user
 from config.config import config_map
-from extensions import db, login_manager, migrate
+from extensions import db, login_manager
 
 
 
@@ -12,7 +12,6 @@ def create_app(config_name='default'):
 
     db.init_app(app)
     login_manager.init_app(app)
-    migrate.init_app(app, db)
 
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
