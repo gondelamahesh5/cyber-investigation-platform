@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+{% block title %}{{ ioc.ioc_value }} - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="ioc-view-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <h1 class="page-title mb-0">{{ ioc.ioc_value[:30] }}{% if ioc.ioc_value|length > 30 %}...{% endif %}</h1>
+                    <span class="badge threat-badge threat-{{ ioc.threat_level }}">
+                        <i class="fas fa-exclamation-triangle me-1"></i>{{ ioc.threat_level|title }}
+                    </span>
+                </div>
+                <p class="page-subtitle">{{ ioc.ioc_type|upper }}</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="btn-group">
+                    <a href="{{ url_for('iocs.edit_ioc', ioc_id=ioc.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>Edit IOC
+                    </a>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteIocModal">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column - IOC Details -->
+        <div class="col-lg-8">
+            <!-- Threat & Confidence -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card info-card">
+                        <div class="card-body">
+                            <label class="text-muted small mb-2">Threat Level</label>
+                            <div class="threat-display threat-{{ ioc.threat_level }}">
+                                <i class="fas fa-shield-alt me-2"></i>{{ ioc.threat_level|upper }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card info-card">
+                        <div class="card-body">
+                            <label class="text-muted small mb-2">Confidence</label>
+                            <div class="confidence-display">
+                                <div class="progress" style="height: 8px; width: 100%;">
+                                    <div class="progress-bar" style="width: {{ ioc.confidence }}%; background-color: {% if ioc.confidence >= 75 %}#ff003c{% elif ioc.confidence >= 50 %}#ff9500{% else %}#00d4ff{% endif %};"></div>
+                                </div>
+                                <div class="confidence-text">{{ ioc.confidence }}%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IOC Information -->
+            <div class="card detail-section-card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-info-circle me-2"></i>IOC Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="info-label">IOC Value</label>
+                            <div class="info-value font-monospace">{{ ioc.ioc_value }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">IOC Type</label>
+                            <div class="info-value">{{ ioc.ioc_type|upper }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Status</label>
+                            <div class="info-value">
+                                <span class="badge status-badge status-{{ ioc.status }}">
+                                    {{ ioc.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">TLP Level</label>
+                            <div class="info-value">
+                                <span class="badge tlp-badge tlp-{{ ioc.tlp_level|lower }}">
+                                    {{ ioc.tlp_level|upper }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">First Seen</label>
+                            <div class="info-value">{{ ioc.first_seen.strftime('%Y-%m-%d %H:%M') if ioc.first_seen else 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Last Seen</label>
+                            <div class="info-value">{{ ioc.last_seen.strftime('%Y-%m-%d %H:%M') if ioc.last_seen else 'N/A' }}</div>
+                        </div>
+                        {% if ioc.source %}
+                        <div class="col-12">
+                            <label class="info-label">Source</label>
+                            <div class="info-value">{{ ioc.source }}</div>
+                        </div>
+                        {% endif %}
+                        {% if ioc.description %}
+                        <div class="col-12">
+                            <label class="info-label">Description</label>
+                            <div class="info-value">{{ ioc.description }}</div>
+                        </div>
+                        {% endif %}
+                        {% if ioc.tags %}
+                        <div class="col-12">
+                            <label class="info-label">Tags</label>
+                            <div>
+                                {% for tag in ioc.tags.split(',') %}
+                                <span class="badge tag-badge">{{ tag.strip() }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Sidebar -->
+        <div class="col-lg-4">
+            <!-- Related Case -->
+            <div class="card sidebar-card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-folder-open me-2"></i>Related Case</h6>
+                </div>
+                <div class="card-body">
+                    {% if ioc.case %}
+                        <a href="{{ url_for('cases.view_case', case_id=ioc.case_id) }}" class="case-link-card">
+                            <div class="case-info">
+                                <strong>{{ ioc.case.case_number }}</strong>
+                                <small class="d-block text-muted">{{ ioc.case.title }}</small>
+                            </div>
+                        </a>
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-folder-open fa-2x mb-2"></i>
+                            <p class="mb-0">No related case</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Threat Intelligence -->
+            <div class="card sidebar-card">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-shield-alt me-2"></i>Threat Intelligence</h6>
+                </div>
+                <div class="card-body">
+                    <div class="threat-info-item mb-3">
+                        <small class="text-muted">Confidence Score</small>
+                        <div class="confidence-score">{{ ioc.confidence }}%</div>
+                    </div>
+                    <div class="threat-info-item mb-3">
+                        <small class="text-muted">Threat Level</small>
+                        <div class="threat-level-display threat-{{ ioc.threat_level }}">
+                            {{ ioc.threat_level|upper }}
+                        </div>
+                    </div>
+                    <div class="threat-info-item">
+                        <small class="text-muted">TLP Classification</small>
+                        <div class="tlp-display tlp-{{ ioc.tlp_level|lower }}">
+                            {{ ioc.tlp_level|upper }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete IOC Modal -->
+<div class="modal fade" id="deleteIocModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete IOC</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete IOC <strong>{{ ioc.ioc_value }}</strong>?</p>
+                <p class="text-danger small"><i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('iocs.delete_ioc', ioc_id=ioc.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Delete IOC
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.info-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.threat-display, .confidence-display {
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.threat-critical { color: #ff003c; }
+.threat-high { color: #ff9500; }
+.threat-medium { color: #00d4ff; }
+.threat-low { color: #7b2cbf; }
+
+.confidence-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.confidence-score {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #00d4ff;
+}
+
+.detail-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-label {
+    display: block;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.info-value {
+    color: #fff;
+    font-weight: 500;
+}
+
+.tag-badge {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.sidebar-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.case-link-card {
+    text-decoration: none;
+    display: block;
+}
+
+.case-info {
+    padding: 1rem;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 6px;
+}
+
+.case-info strong {
+    color: #00d4ff;
+}
+
+.threat-info-item {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.threat-info-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.confidence-score {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.threat-level-display {
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.threat-critical { color: #ff003c; }
+.threat-high { color: #ff9500; }
+.threat-medium { color: #00d4ff; }
+.threat-low { color: #7b2cbf; }
+
+.tlp-display {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.tlp-red { color: #ff003c; }
+.tlp-amber { color: #ff9500; }
+.tlp-green { color: #00ff88; }
+.tlp-white { color: #fff; }
+
+.status-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.status-inactive {
+    background: rgba(108, 117, 125, 0.2);
+    color: #adb5bd;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.tlp-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.tlp-red {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.tlp-amber {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.tlp-green {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.tlp-white {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .btn-group {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% block title %}Link Analysis - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="analysis-form-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-project-diagram me-2"></i>Link Analysis
+                </h1>
+                <p class="page-subtitle">NetworkX-powered graph analysis and visualization</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('analysis.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Tools
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <form method="POST" id="linkForm">
+                <!-- Analysis Configuration -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-cog me-2"></i>Analysis Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="analysis_name" class="form-label required">Analysis Name *</label>
+                                <input type="text" class="form-control" id="analysis_name" name="analysis_name" value="Link Analysis" required placeholder="Enter analysis name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="case_id" class="form-label">Related Case</label>
+                                <select class="form-select" id="case_id" name="case_id">
+                                    <option value="">No case</option>
+                                    {% for case in cases %}
+                                    <option value="{{ case.id }}">{{ case.case_number }} - {{ case.title[:30] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nodes & Edges -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-project-diagram me-2"></i>Network Nodes & Edges</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">Build a network graph by adding nodes and edges to analyze relationships and identify key actors.</p>
+                        
+                        <input type="hidden" name="nodes" id="nodesData" value="[]">
+                        <input type="hidden" name="edges" id="edgesData" value="[]">
+
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-tool btn-success" onclick="addNode()">
+                                <i class="fas fa-plus me-2"></i>Add Node
+                            </button>
+                            <button type="button" class="btn btn-tool btn-info" onclick="addEdge()">
+                                <i class="fas fa-plus me-2"></i>Add Edge
+                            </button>
+                        </div>
+
+                        <div id="nodeList" class="mb-4"></div>
+                        <div id="edgeList"></div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('analysis.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-project-diagram me-2"></i>Run Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let nodes = [];
+let edges = [];
+
+function addNode() {
+    const container = document.getElementById('nodeList');
+    const div = document.createElement('div');
+    div.className = 'row g-2 mb-2 node-row';
+    div.innerHTML = `
+        <div class="col-md-4">
+            <input type="text" class="form-control node-id" placeholder="Node ID (e.g., person1)" required>
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control node-label" placeholder="Label (e.g., John Doe)" required>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select node-type" required>
+                <option value="">Select type...</option>
+                <option value="person">Person</option>
+                <option value="ip">IP Address</option>
+                <option value="email">Email</option>
+                <option value="domain">Domain</option>
+                <option value="phone">Phone</option>
+                <option value="location">Location</option>
+                <option value="organization">Organization</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function addEdge() {
+    const container = document.getElementById('edgeList');
+    const div = document.createElement('div');
+    div.className = 'row g-2 mb-2 edge-row';
+    div.innerHTML = `
+        <div class="col-md-4">
+            <input type="text" class="form-control edge-source" placeholder="Source Node ID" required>
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control edge-target" placeholder="Target Node ID" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" class="form-control edge-weight" placeholder="Weight" value="1" min="0.1" step="0.1">
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+document.getElementById('linkForm').addEventListener('submit', function() {
+    nodes = [];
+    edges = [];
+    
+    document.querySelectorAll('.node-row').forEach(row => {
+        const id = row.querySelector('.node-id').value.trim();
+        const label = row.querySelector('.node-label').value.trim();
+        const type = row.querySelector('.node-type').value;
+        if (id && label && type) {
+            nodes.push({ id, label, type });
+        }
+    });
+    
+    document.querySelectorAll('.edge-row').forEach(row => {
+        const source = row.querySelector('.edge-source').value.trim();
+        const target = row.querySelector('.edge-target').value.trim();
+        const weight = parseFloat(row.querySelector('.edge-weight').value) || 1;
+        if (source && target) {
+            edges.push({ source, target, weight });
+        }
+    });
+    
+    document.getElementById('nodesData').value = JSON.stringify(nodes);
+    document.getElementById('edgesData').value = JSON.stringify(edges);
+});
+
+// Add sample nodes on load
+$(document).ready(function() {
+    addNode();
+    addNode();
+    addEdge();
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.form-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.form-section-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+}
+
+.form-section-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #ff003c;
+}
+
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.form-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.btn-tool {
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-tool.btn-success {
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    color: #00ff88;
+}
+
+.btn-tool.btn-success:hover {
+    background: rgba(0, 255, 136, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+}
+
+.btn-tool.btn-info {
+    background: rgba(0, 212, 255, 0.2);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+}
+
+.btn-tool.btn-info:hover {
+    background: rgba(0, 212, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.btn-danger {
+    background: rgba(255, 0, 60, 0.2);
+    border: 1px solid rgba(255, 0, 60, 0.3);
+    color: #ff003c;
+}
+
+.btn-danger:hover {
+    background: rgba(255, 0, 60, 0.3);
+    color: #ff003c;
+}
+
+.node-row, .edge-row {
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .form-section-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

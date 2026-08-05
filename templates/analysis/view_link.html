@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}{{ analysis.analysis_name }} - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="link-view-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">{{ analysis.analysis_name[:40] }}{% if analysis.analysis_name|length > 40 %}...{% endif %}</h1>
+                <p class="page-subtitle">Network graph analysis results</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{{ url_for('analysis.link_analysis') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Graph Visualization -->
+        <div class="col-xl-8">
+            <div class="card detail-section-card">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-project-diagram me-2"></i>Network Graph</h6>
+                </div>
+                <div class="card-body">
+                    <div class="graph-container">
+                        <canvas id="networkGraph" height="500"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Statistics -->
+        <div class="col-xl-4">
+            <!-- Network Statistics -->
+            <div class="card sidebar-card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-chart-bar me-2"></i>Network Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item">
+                        <small class="text-muted">Total Nodes</small>
+                        <div class="stat-value">{{ analysis.nodes_count }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <small class="text-muted">Total Edges</small>
+                        <div class="stat-value">{{ analysis.edges_count }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <small class="text-muted">Density</small>
+                        <div class="stat-value">{{ "%.2f"|format(analysis.density or 0) }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <small class="text-muted">Analysis Date</small>
+                        <div class="stat-value">{{ analysis.created_at.strftime('%Y-%m-%d %H:%M') if analysis.created_at else 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            {% if analysis.description %}
+            <div class="card sidebar-card">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-info-circle me-2"></i>Description</h6>
+                </div>
+                <div class="card-body">
+                    <p class="description-text">{{ analysis.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const data = {{ analysis.graph_data | safe }};
+    const canvas = document.getElementById('networkGraph');
+    const ctx = canvas.getContext('2d');
+    const nodes = data.nodes || [];
+    const edges = data.edges || [];
+    
+    // Set canvas size
+    canvas.width = canvas.parentElement.clientWidth;
+    const height = 500;
+    canvas.height = height;
+    
+    const xs = {};
+    const ys = {};
+    const margin = 60;
+    const width = canvas.width - margin;
+    const graphHeight = height - margin;
+    
+    // Position nodes in a circle
+    nodes.forEach((node, i) => {
+        const angle = (i / Math.max(nodes.length, 1)) * 2 * Math.PI;
+        xs[node.id] = margin / 2 + width / 2 + (width / 2 - margin / 2) * Math.cos(angle);
+        ys[node.id] = margin / 2 + graphHeight / 2 + (graphHeight / 2 - margin / 2) * Math.sin(angle);
+    });
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw edges
+    edges.forEach(edge => {
+        if (xs[edge.source] && xs[edge.target]) {
+            ctx.beginPath();
+            ctx.moveTo(xs[edge.source], ys[edge.source]);
+            ctx.lineTo(xs[edge.target], ys[edge.target]);
+            ctx.strokeStyle = 'rgba(0, 212, 255, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+    });
+    
+    // Draw nodes
+    nodes.forEach(node => {
+        const x = xs[node.id];
+        const y = ys[node.id];
+        const radius = node.size || 12;
+        
+        // Node circle
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#00d4ff';
+        ctx.fill();
+        ctx.strokeStyle = '#7b2cbf';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Node label
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(node.label || node.id, x, y + radius + 15);
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.detail-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.graph-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 500px;
+}
+
+#networkGraph {
+    width: 100%;
+    height: 500px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.sidebar-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.stat-item small {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #00d4ff;
+}
+
+.description-text {
+    color: #fff;
+    line-height: 1.6;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    #networkGraph {
+        height: 400px;
+    }
+}
+</style>
+{% endblock %}

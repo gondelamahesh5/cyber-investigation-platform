@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+{% block title %}AI Analysis - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="analysis-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-robot me-2"></i>AI Analysis Tools
+                </h1>
+                <p class="page-subtitle">Advanced artificial intelligence for cyber investigation</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{{ url_for('ai_assistant.index') }}" class="btn btn-primary">
+                    <i class="fas fa-comments me-2"></i>AI Assistant
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Tools Grid -->
+    <div class="tools-grid mb-5">
+        <!-- Document Summarizer -->
+        <div class="tool-card">
+            <div class="tool-icon">
+                <i class="fas fa-file-lines"></i>
+            </div>
+            <div class="tool-content">
+                <h5 class="tool-title">Document Summarizer</h5>
+                <p class="tool-description">AI-powered text summarization with key points extraction</p>
+                <a href="{{ url_for('analysis.summarize') }}" class="btn btn-tool">
+                    <i class="fas fa-play me-2"></i>Use Tool
+                </a>
+            </div>
+        </div>
+
+        <!-- Entity Extraction -->
+        <div class="tool-card">
+            <div class="tool-icon tool-icon-success">
+                <i class="fas fa-crosshairs"></i>
+            </div>
+            <div class="tool-content">
+                <h5 class="tool-title">Entity Extraction</h5>
+                <p class="tool-description">Extract IPs, URLs, emails, hashes, and more</p>
+                <a href="{{ url_for('analysis.extract_entities') }}" class="btn btn-tool btn-success">
+                    <i class="fas fa-play me-2"></i>Use Tool
+                </a>
+            </div>
+        </div>
+
+        <!-- Link Analysis -->
+        <div class="tool-card">
+            <div class="tool-icon tool-icon-info">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="tool-content">
+                <h5 class="tool-title">Link Analysis</h5>
+                <p class="tool-description">NetworkX-powered graph analysis and visualization</p>
+                <a href="{{ url_for('analysis.link_analysis') }}" class="btn btn-tool btn-info">
+                    <i class="fas fa-play me-2"></i>Use Tool
+                </a>
+            </div>
+        </div>
+
+        <!-- Log Analysis -->
+        <div class="tool-card">
+            <div class="tool-icon tool-icon-warning">
+                <i class="fas fa-list-alt"></i>
+            </div>
+            <div class="tool-content">
+                <h5 class="tool-title">Log Analysis</h5>
+                <p class="tool-description">Detect attacks, anomalies, and patterns in logs</p>
+                <a href="{{ url_for('analysis.analyze_logs') }}" class="btn btn-tool btn-warning">
+                    <i class="fas fa-play me-2"></i>Use Tool
+                </a>
+            </div>
+        </div>
+
+        <!-- Email Analysis -->
+        <div class="tool-card">
+            <div class="tool-icon tool-icon-danger">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+            <div class="tool-content">
+                <h5 class="tool-title">Email Header Analysis</h5>
+                <p class="tool-description">Detect spoofing and phishing indicators</p>
+                <a href="{{ url_for('analysis.analyze_email') }}" class="btn btn-tool btn-danger">
+                    <i class="fas fa-play me-2"></i>Use Tool
+                </a>
+            </div>
+        </div>
+
+        <!-- OCR Analysis -->
+        <div class="tool-card">
+            <div class="tool-icon tool-icon-secondary">
+                <i class="fas fa-file-image"></i>
+            </div>
+            <div class="tool-content">
+                <h5 class="tool-title">OCR Analysis</h5>
+                <p class="tool-description">Extract text from images using Tesseract OCR</p>
+                <a href="{{ url_for('analysis.ocr') }}" class="btn btn-tool btn-secondary">
+                    <i class="fas fa-play me-2"></i>Use Tool
+                </a>
+            </div>
+        </div>
+
+        <!-- PDF Intelligence -->
+        <div class="tool-card">
+            <div class="tool-icon tool-icon-danger">
+                <i class="fas fa-file-pdf"></i>
+            </div>
+            <div class="tool-content">
+                <h5 class="tool-title">PDF Intelligence</h5>
+                <p class="tool-description">Analyze PDFs for malicious content and metadata</p>
+                <a href="{{ url_for('analysis.pdf_intel') }}" class="btn btn-tool btn-danger">
+                    <i class="fas fa-play me-2"></i>Use Tool
+                </a>
+            </div>
+        </div>
+
+        <!-- Malware Analysis -->
+        <div class="tool-card">
+            <div class="tool-icon tool-icon-dark">
+                <i class="fas fa-skull-crossbones"></i>
+            </div>
+            <div class="tool-content">
+                <h5 class="tool-title">Malware Analysis</h5>
+                <p class="tool-description">Analyze files for malicious indicators and hashes</p>
+                <a href="{{ url_for('analysis.malware') }}" class="btn btn-tool btn-dark">
+                    <i class="fas fa-play me-2"></i>Use Tool
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row g-4">
+        <!-- Recent Summaries -->
+        <div class="col-lg-6">
+            <div class="card activity-card">
+                <div class="card-header">
+                    <h6 class="card-title">
+                        <i class="fas fa-file-lines me-2"></i>Recent Summaries
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for summary in summaries %}
+                        <a href="{{ url_for('analysis.view_summary', summary_id=summary.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <strong>{{ summary.document_name }}</strong>
+                                    <small class="d-block text-muted">{{ summary.summary_text[:100] }}...</small>
+                                </div>
+                                <small class="text-muted ms-2">{{ summary.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                        </a>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p class="mb-0">No summaries yet</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Entities -->
+        <div class="col-lg-6">
+            <div class="card activity-card">
+                <div class="card-header">
+                    <h6 class="card-title">
+                        <i class="fas fa-crosshairs me-2"></i>Recent Entities
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for entity in entities %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge entity-badge entity-{{ entity.entity_type }}">{{ entity.entity_type }}</span>
+                                    <span class="font-monospace ms-2">{{ entity.entity_value }}</span>
+                                </div>
+                                <small class="text-muted">{{ entity.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="fas fa-crosshairs fa-2x mb-2"></i>
+                            <p class="mb-0">No entities extracted yet</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.tool-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.tool-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.15);
+}
+
+.tool-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: #00d4ff;
+    margin-bottom: 1rem;
+}
+
+.tool-icon-success {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 212, 255, 0.2) 100%);
+    color: #00ff88;
+}
+
+.tool-icon-info {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%);
+    color: #00d4ff;
+}
+
+.tool-icon-warning {
+    background: linear-gradient(135deg, rgba(255, 149, 0, 0.2) 0%, rgba(255, 0, 60, 0.2) 100%);
+    color: #ff9500;
+}
+
+.tool-icon-danger {
+    background: linear-gradient(135deg, rgba(255, 0, 60, 0.2) 0%, rgba(255, 149, 0, 0.2) 100%);
+    color: #ff003c;
+}
+
+.tool-icon-secondary {
+    background: linear-gradient(135deg, rgba(108, 117, 125, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%);
+    color: #adb5bd;
+}
+
+.tool-icon-dark {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(255, 0, 60, 0.2) 100%);
+    color: #ff003c;
+}
+
+.tool-content {
+    flex-grow: 1;
+}
+
+.tool-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.tool-description {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
+
+.btn-tool {
+    width: 100%;
+    background: rgba(0, 212, 255, 0.2);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-tool:hover {
+    background: rgba(0, 212, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.btn-tool.btn-success {
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    color: #00ff88;
+}
+
+.btn-tool.btn-success:hover {
+    background: rgba(0, 255, 136, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+}
+
+.btn-tool.btn-info {
+    background: rgba(0, 212, 255, 0.2);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+}
+
+.btn-tool.btn-warning {
+    background: rgba(255, 149, 0, 0.2);
+    border: 1px solid rgba(255, 149, 0, 0.3);
+    color: #ff9500;
+}
+
+.btn-tool.btn-danger {
+    background: rgba(255, 0, 60, 0.2);
+    border: 1px solid rgba(255, 0, 60, 0.3);
+    color: #ff003c;
+}
+
+.btn-tool.btn-secondary {
+    background: rgba(108, 117, 125, 0.2);
+    border: 1px solid rgba(108, 117, 125, 0.3);
+    color: #adb5bd;
+}
+
+.btn-tool.btn-dark {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 0, 60, 0.3);
+    color: #ff003c;
+}
+
+.activity-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activity-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activity-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.list-group-item {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.list-group-item:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.entity-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.entity-ipv4 { background: rgba(0, 212, 255, 0.2); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.3); }
+.entity-ipv6 { background: rgba(123, 44, 191, 0.2); color: #7b2cbf; border: 1px solid rgba(123, 44, 191, 0.3); }
+.entity-domain { background: rgba(255, 149, 0, 0.2); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.3); }
+.entity-url { background: rgba(255, 0, 60, 0.2); color: #ff003c; border: 1px solid rgba(255, 0, 60, 0.3); }
+.entity-email { background: rgba(0, 255, 136, 0.2); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.3); }
+.entity-md5 { background: rgba(108, 117, 125, 0.2); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
+.entity-sha1 { background: rgba(108, 117, 125, 0.2); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
+.entity-sha256 { background: rgba(108, 117, 125, 0.2); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
+.entity-file_path { background: rgba(0, 212, 255, 0.2); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.3); }
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .tools-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

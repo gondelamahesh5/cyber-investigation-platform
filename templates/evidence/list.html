@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+{% block title %}Evidence - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="evidence-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-database me-2"></i>Evidence Management
+                </h1>
+                <p class="page-subtitle">Store and manage digital evidence</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{{ url_for('evidence.upload_evidence') }}" class="btn btn-primary">
+                    <i class="fas fa-upload me-2"></i>Upload Evidence
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card filter-card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-filter me-2"></i>Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-icon"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="Search evidence...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="case_id">
+                        <option value="">All Cases</option>
+                        {% for c in cases %}
+                        <option value="{{ c.id }}" {% if case_id == c.id %}selected{% endif %}>{{ c.case_number }} - {{ c.title[:30] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="type">
+                        <option value="">All Types</option>
+                        {% for t in ['document', 'image', 'video', 'audio', 'email', 'log', 'binary', 'network', 'other'] %}
+                        <option value="{{ t }}" {% if evidence_type == t %}selected{% endif %}>{{ t|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i>Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Evidence Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-list me-2"></i>Evidence Inventory
+                {% if evidence.items %}
+                    <span class="badge bg-info ms-2">{{ evidence.total }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 evidence-table">
+                    <thead>
+                        <tr>
+                            <th>Evidence #</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Case</th>
+                            <th>File Info</th>
+                            <th>Status</th>
+                            <th>Uploaded</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in evidence.items %}
+                        <tr class="evidence-row">
+                            <td>
+                                <span class="evidence-number">{{ item.evidence_number }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('evidence.view_evidence', evidence_id=item.id) }}" class="evidence-title">
+                                    {{ item.title[:50] }}{% if item.title|length > 50 %}...{% endif %}
+                                </a>
+                                {% if item.description %}
+                                    <br><small class="text-muted">{{ item.description[:60] }}...</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge type-badge type-{{ item.evidence_type }}">
+                                    <i class="fas fa-file me-1"></i>{{ item.evidence_type|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.case %}
+                                    <a href="{{ url_for('cases.view_case', case_id=item.case_id) }}" class="case-link">
+                                        {{ item.case.case_number }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.file_name %}
+                                    <div class="file-info">
+                                        <i class="fas fa-file-{{ 'pdf' if item.file_name.endswith('.pdf') else 'image' if item.file_name.endswith(('.jpg', '.jpeg', '.png', '.gif')) else 'code' if item.file_name.endswith(('.txt', '.log', '.csv')) else 'archive' if item.file_name.endswith(('.zip', '.rar')) else 'paper-plane' }} me-1"></i>
+                                        <div>
+                                            <small>{{ item.file_name[:25] }}{% if item.file_name|length > 25 %}...{% endif %}</small>
+                                            {% if item.file_size %}
+                                                <br><small class="text-muted">{{ item.file_size_human }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted"><i class="fas fa-link me-1"></i>URL Evidence</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge status-badge status-{{ item.status }}">
+                                    <i class="fas fa-circle me-1"></i>{{ item.status|title }}
+                                </span>
+                            </td>
+                            <td>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else 'N/A' }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm action-btns">
+                                    <a href="{{ url_for('evidence.view_evidence', evidence_id=item.id) }}" class="btn btn-view" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if item.file_path %}
+                                    <a href="{{ url_for('evidence.download_evidence', evidence_id=item.id) }}" class="btn btn-download" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% endif %}
+                                    <form method="POST" action="{{ url_for('evidence.delete_evidence', evidence_id=item.id) }}" class="d-inline" onsubmit="return confirm('Are you sure? This will permanently delete the evidence file.')">
+                                        <button type="submit" class="btn btn-delete" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fas fa-database"></i>
+                                    <h4>No Evidence Found</h4>
+                                    <p class="text-muted">Upload your first evidence to get started</p>
+                                    <a href="{{ url_for('evidence.upload_evidence') }}" class="btn btn-primary">
+                                        <i class="fas fa-upload me-2"></i>Upload Evidence
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if evidence.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if evidence.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('evidence.list_evidence', page=evidence.prev_num, search=search, case_id=case_id, type=evidence_type) }}">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+            </li>
+            {% endif %}
+
+            {% for page_num in evidence.iter_pages() %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == evidence.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('evidence.list_evidence', page=page_num, search=search, case_id=case_id, type=evidence_type) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if evidence.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('evidence.list_evidence', page=evidence.next_num, search=search, case_id=case_id, type=evidence_type) }}">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.filter-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.input-group {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    z-index: 10;
+}
+
+.input-group .form-control {
+    padding-left: 2.75rem;
+}
+
+.evidence-table {
+    margin-bottom: 0;
+}
+
+.evidence-table thead {
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.evidence-table th {
+    padding: 1rem;
+    font-weight: 600;
+    color: #00d4ff;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+}
+
+.evidence-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.evidence-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.evidence-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.evidence-number {
+    font-family: 'JetBrains Mono', monospace;
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.evidence-title {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.evidence-title:hover {
+    color: #00d4ff;
+    text-decoration: none;
+}
+
+.type-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.type-document {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.type-image {
+    background: rgba(123, 44, 191, 0.2);
+    color: #7b2cbf;
+    border: 1px solid rgba(123, 44, 191, 0.3);
+}
+
+.type-video {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.type-audio {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.type-email {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.type-log {
+    background: rgba(108, 117, 125, 0.2);
+    color: #adb5bd;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.type-binary {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.type-network {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.type-other {
+    background: rgba(108, 117, 125, 0.2);
+    color: #adb5bd;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.case-link {
+    color: #00d4ff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.case-link:hover {
+    color: #00d4ff;
+    text-decoration: underline;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-collected {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.status-verified {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.status-analyzed {
+    background: rgba(123, 44, 191, 0.2);
+    color: #7b2cbf;
+    border: 1px solid rgba(123, 44, 191, 0.3);
+}
+
+.status-processing {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.action-btns {
+    gap: 0.25rem;
+}
+
+.btn-view {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.btn-view:hover {
+    background: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+    transform: translateY(-1px);
+}
+
+.btn-download {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.btn-download:hover {
+    background: rgba(0, 255, 136, 0.3);
+    color: #00ff88;
+    transform: translateY(-1px);
+}
+
+.btn-delete {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.btn-delete:hover {
+    background: rgba(255, 0, 60, 0.3);
+    color: #ff003c;
+    transform: translateY(-1px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.pagination {
+    gap: 0.25rem;
+}
+
+.page-link {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border-color: transparent;
+    color: #fff;
+}
+
+.page-item.disabled .page-link {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .evidence-table {
+        font-size: 0.9rem;
+    }
+    
+    .action-btns {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

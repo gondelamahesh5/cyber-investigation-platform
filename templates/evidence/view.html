@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+{% block title %}{{ evidence.evidence_number }} - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="evidence-view-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <h1 class="page-title mb-0">{{ evidence.evidence_number }}</h1>
+                    <span class="badge status-badge status-{{ evidence.status }}">
+                        <i class="fas fa-circle me-1"></i>{{ evidence.status|title }}
+                    </span>
+                </div>
+                <p class="page-subtitle">{{ evidence.title }}</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="btn-group">
+                    {% if evidence.file_path %}
+                    <a href="{{ url_for('evidence.download_evidence', evidence_id=evidence.id) }}" class="btn btn-success">
+                        <i class="fas fa-download me-2"></i>Download
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('evidence.edit_evidence', evidence_id=evidence.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteEvidenceModal">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column - Evidence Details -->
+        <div class="col-lg-8">
+            <!-- Type & Status -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card info-card">
+                        <div class="card-body">
+                            <label class="text-muted small mb-2">Evidence Type</label>
+                            <div class="type-display type-{{ evidence.evidence_type }}">
+                                <i class="fas fa-file me-2"></i>{{ evidence.evidence_type|upper }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card info-card">
+                        <div class="card-body">
+                            <label class="text-muted small mb-2">Integrity Status</label>
+                            <div class="integrity-display integrity-{{ evidence.integrity_status|lower }}">
+                                <i class="fas fa-shield-alt me-2"></i>{{ evidence.integrity_status|upper }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evidence Information -->
+            <div class="card detail-section-card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-info-circle me-2"></i>Evidence Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="info-label">Case</label>
+                            <div class="info-value">
+                                {% if evidence.case %}
+                                    <a href="{{ url_for('cases.view_case', case_id=evidence.case_id) }}" class="case-link">
+                                        {{ evidence.case.case_number }}
+                                    </a>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Collected By</label>
+                            <div class="info-value">
+                                {% if evidence.uploader %}
+                                    <div class="user-info">
+                                        <div class="user-avatar">{{ evidence.uploader.full_name[0] }}</div>
+                                        <span>{{ evidence.uploader.full_name }}</span>
+                                    </div>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Collected Date</label>
+                            <div class="info-value">{{ evidence.collected_date.strftime('%Y-%m-%d %H:%M') if evidence.collected_date else 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Source</label>
+                            <div class="info-value">{{ evidence.source or 'N/A' }}</div>
+                        </div>
+                        {% if evidence.collection_method %}
+                        <div class="col-12">
+                            <label class="info-label">Collection Method</label>
+                            <div class="info-value">{{ evidence.collection_method }}</div>
+                        </div>
+                        {% endif %}
+                        {% if evidence.description %}
+                        <div class="col-12">
+                            <label class="info-label">Description</label>
+                            <div class="info-value">{{ evidence.description }}</div>
+                        </div>
+                        {% endif %}
+                        {% if evidence.notes %}
+                        <div class="col-12">
+                            <label class="info-label">Notes</label>
+                            <div class="info-value">{{ evidence.notes }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Information -->
+            {% if evidence.file_name %}
+            <div class="card detail-section-card">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-file me-2"></i>File Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="info-label">File Name</label>
+                            <div class="info-value">
+                                <i class="fas fa-file me-2"></i>{{ evidence.file_name }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">File Size</label>
+                            <div class="info-value">{{ '%.2f KB'|format(evidence.file_size / 1024) if evidence.file_size else 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">MIME Type</label>
+                            <div class="info-value">{{ evidence.mime_type or 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Integrity</label>
+                            <div class="info-value">
+                                <span class="badge integrity-badge integrity-{{ evidence.integrity_status|lower }}">
+                                    <i class="fas fa-check-circle me-1"></i>{{ evidence.integrity_status }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Hashes -->
+                    {% if evidence.file_hash_md5 or evidence.file_hash_sha1 or evidence.file_hash_sha256 %}
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-3"><i class="fas fa-fingerprint me-2"></i>File Hashes</h6>
+                        
+                        {% if evidence.file_hash_md5 %}
+                        <div class="hash-block mb-3">
+                            <label class="info-label">MD5</label>
+                            <div class="hash-value font-monospace">
+                                <span class="hash-text">{{ evidence.file_hash_md5 }}</span>
+                                <button class="btn btn-sm btn-copy" onclick="copyToClipboard('{{ evidence.file_hash_md5 }}')" title="Copy">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if evidence.file_hash_sha1 %}
+                        <div class="hash-block mb-3">
+                            <label class="info-label">SHA1</label>
+                            <div class="hash-value font-monospace">
+                                <span class="hash-text">{{ evidence.file_hash_sha1 }}</span>
+                                <button class="btn btn-sm btn-copy" onclick="copyToClipboard('{{ evidence.file_hash_sha1 }}')" title="Copy">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if evidence.file_hash_sha256 %}
+                        <div class="hash-block">
+                            <label class="info-label">SHA256</label>
+                            <div class="hash-value font-monospace">
+                                <span class="hash-text">{{ evidence.file_hash_sha256 }}</span>
+                                <button class="btn btn-sm btn-copy" onclick="copyToClipboard('{{ evidence.file_hash_sha256 }}')" title="Copy">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column - Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card sidebar-card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if evidence.file_path %}
+                        <a href="{{ url_for('evidence.download_evidence', evidence_id=evidence.id) }}" class="btn btn-success">
+                            <i class="fas fa-download me-2"></i>Download Evidence
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('evidence.edit_evidence', evidence_id=evidence.id) }}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Edit Details
+                        </a>
+                        {% if evidence.case_id %}
+                        <a href="{{ url_for('analysis.index') }}" class="btn btn-outline-info">
+                            <i class="fas fa-robot me-2"></i>Analyze Evidence
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chain of Custody -->
+            <div class="card sidebar-card">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-link me-2"></i>Chain of Custody</h6>
+                </div>
+                <div class="card-body">
+                    {% if evidence.chain_of_custody %}
+                    <pre class="chain-of-custody">{{ evidence.chain_of_custody }}</pre>
+                    {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-link fa-2x mb-2"></i>
+                        <p class="mb-2">No chain of custody records</p>
+                    </div>
+                    <div class="custody-info">
+                        <div class="custody-item">
+                            <i class="fas fa-calendar-plus me-2"></i>
+                            <div>
+                                <small class="text-muted">Created</small><br>
+                                <strong>{{ evidence.created_at.strftime('%Y-%m-%d %H:%M') if evidence.created_at else 'N/A' }}</strong>
+                            </div>
+                        </div>
+                        <div class="custody-item">
+                            <i class="fas fa-user me-2"></i>
+                            <div>
+                                <small class="text-muted">Collected By</small><br>
+                                <strong>{{ evidence.uploader.full_name if evidence.uploader else 'N/A' }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Evidence Modal -->
+<div class="modal fade" id="deleteEvidenceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Evidence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete evidence <strong>{{ evidence.evidence_number }}</strong>?</p>
+                <p class="text-danger small"><i class="fas fa-exclamation-triangle me-2"></i>This will permanently delete the evidence record and file. This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('evidence.delete_evidence', evidence_id=evidence.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Delete Evidence
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.info-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.type-display, .integrity-display {
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.type-document { color: #00d4ff; }
+.type-image { color: #7b2cbf; }
+.type-video { color: #ff003c; }
+.type-audio { color: #ff9500; }
+.type-email { color: #00ff88; }
+.type-log { color: #adb5bd; }
+.type-binary { color: #ff003c; }
+.type-network { color: #00d4ff; }
+.type-other { color: #adb5bd; }
+
+.integrity-verified {
+    color: #00ff88;
+}
+
+.integrity-verified {
+    color: #00ff88;
+}
+
+.detail-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-label {
+    display: block;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.info-value {
+    color: #fff;
+    font-weight: 500;
+}
+
+.case-link {
+    color: #00d4ff;
+    text-decoration: none;
+}
+
+.case-link:hover {
+    color: #00d4ff;
+    text-decoration: underline;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.hash-block {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hash-value {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.hash-text {
+    color: #00d4ff;
+    word-break: break-all;
+    font-size: 0.85rem;
+}
+
+.btn-copy {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-copy:hover {
+    background: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+}
+
+.integrity-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.integrity-verified {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.sidebar-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chain-of-custody {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.custody-info {
+    margin-top: 1rem;
+}
+
+.custody-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.custody-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+    border: none;
+    color: #000;
+    font-weight: 600;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .btn-group {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+}
+</style>
+{% endblock %}

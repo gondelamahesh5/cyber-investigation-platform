@@ -1,0 +1,144 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_CONFIG=production
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://cyber_user:${DB_PASSWORD}@db:5432/cyber_investigation
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - ./uploads:/app/uploads
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cyber-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=cyber_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=cyber_investigation
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - cyber-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cyber_user -d cyber_investigation"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - cyber-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A celery_worker.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - FLASK_CONFIG=production
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://cyber_user:${DB_PASSWORD}@db:5432/cyber_investigation
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - ./uploads:/app/uploads
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    networks:
+      - cyber-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./static:/app/static:ro
+      - ./uploads:/app/uploads
+    depends_on:
+      - web
+    restart: unless-stopped
+    networks:
+      - cyber-network
+
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python -c "import sys; sys.path.insert(0, '.'); from utils.backup import backup_database; backup_database()"
+    environment:
+      - FLASK_CONFIG=production
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://cyber_user:${DB_PASSWORD}@db:5432/cyber_investigation
+    volumes:
+      - ./backups:/app/backups
+    depends_on:
+      - db
+    networks:
+      - cyber-network
+    restart: "no"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  cyber-network:
+    driver: bridge

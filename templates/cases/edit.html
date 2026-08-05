@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}Edit Case {{ case.case_number }} - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="case-form-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-edit me-2"></i>Edit Case {{ case.case_number }}
+                </h1>
+                <p class="page-subtitle">Update case information and details</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Case
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <form method="POST" action="{{ url_for('cases.edit_case', case_id=case.id) }}">
+                <!-- Basic Information -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="title" class="form-label required">Case Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ case.title }}" required placeholder="Enter case title">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="case_type" class="form-label">Case Type</label>
+                                <select class="form-select" id="case_type" name="case_type">
+                                    <option value="">Select type...</option>
+                                    {% for type in ['phishing', 'malware', 'ransomware', 'identity_theft', 'fraud', 'data_breach', 'ddos', 'insider_threat', 'cyber_stalking', 'other'] %}
+                                    <option value="{{ type }}" {% if case.case_type == type %}selected{% endif %}>{{ type.replace('_', ' ')|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    {% for p in ['high', 'medium', 'low'] %}
+                                    <option value="{{ p }}" {% if case.priority == p %}selected{% endif %}>{{ p|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="severity" class="form-label">Severity</label>
+                                <select class="form-select" id="severity" name="severity">
+                                    {% for s in ['critical', 'high', 'medium', 'low'] %}
+                                    <option value="{{ s }}" {% if case.severity == s %}selected{% endif %}>{{ s|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="classification" class="form-label">Classification</label>
+                                <select class="form-select" id="classification" name="classification">
+                                    {% for c in ['confidential', 'secret', 'top_secret', 'unclassified'] %}
+                                    <option value="{{ c }}" {% if case.classification == c %}selected{% endif %}>{{ c.replace('_', ' ')|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="5" placeholder="Provide detailed description of the case...">{{ case.description or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment & Location -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-map-marker-alt me-2"></i>Assignment & Location</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="assigned_to" class="form-label">Assign To</label>
+                                <select class="form-select" id="assigned_to" name="assigned_to">
+                                    <option value="">Unassigned</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}" {% if case.assigned_to == user.id %}selected{% endif %}>{{ user.full_name }} ({{ user.role }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="location" name="location" value="{{ case.location or '' }}" placeholder="City, Country">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="jurisdiction" class="form-label">Jurisdiction</label>
+                                <input type="text" class="form-control" id="jurisdiction" name="jurisdiction" value="{{ case.jurisdiction or '' }}" placeholder="Legal jurisdiction">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="due_date" class="form-label">Due Date</label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" value="{{ case.due_date.strftime('%Y-%m-%d') if case.due_date else '' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Victim Information -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title text-success"><i class="fas fa-user-shield me-2"></i>Victim Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="victim_name" class="form-label">Victim Name</label>
+                                <input type="text" class="form-control" id="victim_name" name="victim_name" value="{{ case.victim_name or '' }}" placeholder="Full name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="victim_contact" class="form-label">Victim Contact</label>
+                                <input type="text" class="form-control" id="victim_contact" name="victim_contact" value="{{ case.victim_contact or '' }}" placeholder="Email or phone">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suspect Information -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title text-danger"><i class="fas fa-user-secret me-2"></i>Suspect Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="suspect_name" class="form-label">Suspect Name</label>
+                                <input type="text" class="form-control" id="suspect_name" name="suspect_name" value="{{ case.suspect_name or '' }}" placeholder="Full name or alias">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="suspect_contact" class="form-label">Suspect Contact</label>
+                                <input type="text" class="form-control" id="suspect_contact" name="suspect_contact" value="{{ case.suspect_contact or '' }}" placeholder="Email, phone, or address">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial & Additional -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-dollar-sign me-2"></i>Financial & Additional Info</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="financial_loss" class="form-label">Financial Loss</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="financial_loss" name="financial_loss" step="0.01" min="0" value="{{ case.financial_loss or 0 }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="currency" class="form-label">Currency</label>
+                                <select class="form-select" id="currency" name="currency">
+                                    {% for c in ['USD', 'EUR', 'GBP', 'INR', 'JPY'] %}
+                                    <option value="{{ c }}" {% if case.currency == c %}selected{% endif %}>{{ c }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tags" class="form-label">Tags</label>
+                            <input type="text" class="form-control" id="tags" name="tags" value="{{ case.tags or '' }}" placeholder="Comma-separated tags (e.g., phishing, bank, urgent)">
+                            <small class="text-muted">Use tags to categorize and search cases easily</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Form validation
+    $('form').on('submit', function() {
+        const title = $('#title').val().trim();
+        if (!title) {
+            alert('Case title is required');
+            return false;
+        }
+        return true;
+    });
+
+    // Character counter for description
+    $('#description').on('input', function() {
+        const maxLength = 2000;
+        const currentLength = $(this).val().length;
+        if (currentLength > maxLength) {
+            $(this).val($(this).val().substring(0, maxLength));
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.form-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.form-section-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+}
+
+.form-section-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.form-section-card.text-success .card-title {
+    color: #00ff88;
+}
+
+.form-section-card.text-danger .card-title {
+    color: #ff003c;
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #ff003c;
+}
+
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.form-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.input-group-text {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .form-section-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}OCR Results - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="analysis-view-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-file-image me-2"></i>OCR Results
+                </h1>
+                <p class="page-subtitle">{{ ocr_doc.file_name }} - Confidence: {{ ocr_doc.confidence_score }}%</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('analysis.ocr') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New OCR
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column - Extracted Text -->
+        <div class="col-xl-8">
+            <div class="card detail-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-file-alt me-2"></i>Extracted Text
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="analysis-pre">{{ ocr_doc.extracted_text or 'No text extracted' }}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Details -->
+        <div class="col-xl-4">
+            <div class="card detail-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>OCR Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="detail-item">
+                        <label class="detail-label">File</label>
+                        <div class="detail-value">{{ ocr_doc.file_name }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label class="detail-label">Confidence</label>
+                        <div class="detail-value">
+                            {{ ocr_doc.confidence_score }}%
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" style="width: {{ ocr_doc.confidence_score }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <label class="detail-label">Language</label>
+                        <div class="detail-value">{{ ocr_doc.language or 'N/A' }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label class="detail-label">Pages</label>
+                        <div class="detail-value">{{ ocr_doc.page_count or 'N/A' }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label class="detail-label">Engine</label>
+                        <div class="detail-value">{{ ocr_doc.ocr_engine or 'Tesseract' }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label class="detail-label">Status</label>
+                        <span class="badge bg-success">{{ ocr_doc.status|title }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if entities %}
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-crosshairs me-2"></i>Entities Found
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for type, values in entities.items() %}
+                    <div class="mb-3">
+                        <strong class="detail-label">{{ type|title }}</strong>
+                        <div>
+                            {% for value in values %}
+                            <span class="badge bg-secondary me-1 mb-1">{{ value[:40] }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.25rem;
+}
+
+.page-subtitle { color: rgba(255, 255, 255, 0.7); margin: 0; }
+
+.detail-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-card .card-title { color: #00d4ff; font-weight: 600; }
+
+.detail-item { margin-bottom: 1rem; }
+
+.detail-label {
+    display: block;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value { color: #fff; font-weight: 500; }
+
+.confidence-bar {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    height: 6px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.confidence-fill {
+    background: linear-gradient(90deg, #00ff88 0%, #00d4ff 100%);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.analysis-pre {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    color: #00ff88;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    max-height: 600px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+</style>
+{% endblock %}

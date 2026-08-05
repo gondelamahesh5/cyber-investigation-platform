@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% block title %}{{ summary.document_name }} - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="summary-view-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">{{ summary.document_name[:40] }}{% if summary.document_name|length > 40 %}...{% endif %}</h1>
+                <p class="page-subtitle">{{ summary.document_type or 'Document' }} - Created {{ summary.created_at.strftime('%Y-%m-%d %H:%M') if summary.created_at else 'N/A' }}</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{{ url_for('analysis.summarize') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Summary
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column -->
+        <div class="col-xl-8">
+            <!-- Summary Content -->
+            <div class="card detail-section-card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-file-lines me-2"></i>Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="summary-text">{{ summary.summary_text }}</div>
+                    <div class="summary-meta">
+                        <span class="badge sentiment-badge sentiment-{{ summary.sentiment }}">
+                            <i class="fas fa-{% if summary.sentiment == 'positive' %}smile{% elif summary.sentiment == 'negative' %}frown{% else %}meh{% endif %} me-1"></i>
+                            {{ summary.sentiment|title }}
+                        </span>
+                        <span class="badge meta-badge">
+                            <i class="fas fa-language me-1"></i>{{ summary.language or 'English' }}
+                        </span>
+                        <span class="badge meta-badge">
+                            <i class="fas fa-robot me-1"></i>{{ summary.model_used or 'AI Model' }}
+                        </span>
+                        <span class="badge compression-badge compression-{% if summary.compression_ratio|float >= 0.5 %}high{% elif summary.compression_ratio|float >= 0.3 %}medium{% else %}low{% endif %}">
+                            <i class="fas fa-compress me-1"></i>{{ summary.compression_ratio|float|round(2) }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Points -->
+            {% if summary.key_points %}
+            <div class="card detail-section-card">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-lightbulb me-2"></i>Key Points</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="key-points-list">
+                        {% for point in summary.key_points.split('\n') %}
+                        {% if point.strip() %}
+                        <li>{{ point }}</li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-xl-4">
+            <!-- Statistics -->
+            <div class="card sidebar-card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-chart-bar me-2"></i>Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item">
+                        <small class="text-muted">Original Length</small>
+                        <div class="stat-value">{{ summary.original_text|length }} chars</div>
+                    </div>
+                    <div class="stat-item">
+                        <small class="text-muted">Summary Length</small>
+                        <div class="stat-value">{{ summary.summary_length }} words</div>
+                    </div>
+                    <div class="stat-item">
+                        <small class="text-muted">Compression Ratio</small>
+                        <div class="stat-value">{{ summary.compression_ratio|float|round(2) }}%</div>
+                    </div>
+                    <div class="stat-item">
+                        <small class="text-muted">Language</small>
+                        <div class="stat-value">{{ summary.language or 'English' }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <small class="text-muted">Model</small>
+                        <div class="stat-value">{{ summary.model_used or 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Original Text -->
+            <div class="card sidebar-card">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-file-text me-2"></i>Original Text</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="original-text-block">{{ summary.original_text[:5000] }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.detail-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summary-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border-left: 4px solid #00d4ff;
+}
+
+.summary-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.meta-badge {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.compression-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.compression-high {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.compression-medium {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.compression-low {
+    background: rgba(108, 117, 125, 0.2);
+    color: #adb5bd;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.sentiment-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.sentiment-positive {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.sentiment-negative {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.sentiment-neutral {
+    background: rgba(108, 117, 125, 0.2);
+    color: #adb5bd;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.key-points-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.key-points-list li {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: rgba(0, 212, 255, 0.05);
+    border-left: 3px solid #00d4ff;
+    border-radius: 6px;
+    color: #fff;
+    transition: all 0.2s ease;
+}
+
+.key-points-list li:hover {
+    background: rgba(0, 212, 255, 0.1);
+    transform: translateX(4px);
+}
+
+.key-points-list li:last-child {
+    margin-bottom: 0;
+}
+
+.sidebar-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.stat-item small {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #00d4ff;
+}
+
+.original-text-block {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .summary-meta {
+        flex-direction: column;
+    }
+    
+    .summary-text {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}

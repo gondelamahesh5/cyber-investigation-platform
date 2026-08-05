@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}PDF Analysis Results - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="analysis-view-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-file-pdf me-2"></i>{{ pdf_doc.file_name }}
+                </h1>
+                <p class="page-subtitle">{{ pdf_doc.page_count }} pages - {{ '%.2f KB'|format(pdf_doc.file_size / 1024) if pdf_doc.file_size }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('analysis.pdf_intel') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Threat Alert -->
+    <div class="alert alert-{{ 'danger' if pdf_doc.is_malicious else 'success' }} threat-alert mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-{{ 'skull-crossbones' if pdf_doc.is_malicious else 'shield-check' }} fa-2x me-3 flex-shrink-0"></i>
+            <div>
+                <strong class="fs-5">
+                    {{ 'MALICIOUS PDF DETECTED' if pdf_doc.is_malicious else 'PDF appears safe' }}
+                </strong>
+                {% if pdf_doc.javascript_detected %}
+                    <span class="badge bg-danger ms-2">JavaScript Detected</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column -->
+        <div class="col-xl-8">
+            {% if pdf_doc.summary %}
+            <div class="card detail-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-file-lines me-2"></i>Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">{{ pdf_doc.summary }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card detail-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-file-alt me-2"></i>Extracted Text
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="analysis-pre">{{ pdf_doc.extracted_text[:5000] if pdf_doc.extracted_text else 'No text extracted' }}</pre>
+                </div>
+            </div>
+
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Suspicious Indicators
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="analysis-pre">{{ pdf_doc.suspicious_indicators }}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-xl-4">
+            <div class="card detail-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>File Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="detail-item">
+                        <label class="detail-label">File</label>
+                        <div class="detail-value">{{ pdf_doc.file_name }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label class="detail-label">Size</label>
+                        <div class="detail-value">{{ '%.2f KB'|format(pdf_doc.file_size / 1024) if pdf_doc.file_size else 'N/A' }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label class="detail-label">Pages</label>
+                        <div class="detail-value">{{ pdf_doc.page_count or 'N/A' }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label class="detail-label">Malicious</label>
+                        <span class="badge bg-{{ 'danger' if pdf_doc.is_malicious else 'success' }}">
+                            {{ 'Yes' if pdf_doc.is_malicious else 'No' }}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <label class="detail-label">JavaScript</label>
+                        <span class="badge bg-{{ 'danger' if pdf_doc.javascript_detected else 'success' }}">
+                            {{ 'Detected' if pdf_doc.javascript_detected else 'None' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {% if pdf_doc.urls_found %}
+            <div class="card detail-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-link me-2"></i>URLs Found
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="analysis-pre">{{ pdf_doc.urls_found }}</pre>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if pdf_doc.emails_found %}
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-envelope me-2"></i>Emails Found
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="analysis-pre">{{ pdf_doc.emails_found }}</pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle { color: rgba(255, 255, 255, 0.7); margin: 0; }
+
+.threat-alert {
+    background: rgba(255, 0, 60, 0.15);
+    border: 1px solid rgba(255, 0, 60, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.detail-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-card .card-title { color: #00d4ff; font-weight: 600; }
+
+.detail-item { margin-bottom: 1rem; }
+
+.detail-label {
+    display: block;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value { color: #fff; font-weight: 500; }
+
+.analysis-pre {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    color: #00ff88;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+@media (max-width: 768px) {
+    .page-title { font-size: 1.5rem; }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}User Management - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="users-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-users me-2"></i>User Management
+                </h1>
+                <p class="page-subtitle">Manage system users and their roles</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>Add User
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-list me-2"></i>User Registry
+                {% if users %}
+                    <span class="badge bg-info ms-2">{{ users|length }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 users-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr class="user-row">
+                            <td><span class="font-monospace text-primary">{{ user.username }}</span></td>
+                            <td class="fw-medium">{{ user.full_name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('settings.change_role', user_id=user.id) }}" class="d-inline">
+                                    <select name="role" class="form-select form-select-sm role-select" onchange="this.form.submit()">
+                                        {% for role in ['admin', 'analyst', 'investigator', 'viewer'] %}
+                                        <option value="{{ role }}" {% if user.role == role %}selected{% endif %}>{{ role|title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </td>
+                            <td>{{ user.department or 'N/A' }}</td>
+                            <td>
+                                {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}</td>
+                            <td class="text-center">
+                                {% if user.id != current_user.id %}
+                                <form method="POST" action="{{ url_for('settings.toggle_user', user_id=user.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-{% if user.is_active %}danger{% else %}success{% endif %}">
+                                        <i class="fas fa-{% if user.is_active %}ban{% else %}check{% endif %}"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fas fa-users"></i>
+                                    <h4>No Users Found</h4>
+                                    <p class="text-muted">Add new users to manage system access</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-size: 1rem;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.users-table thead {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(123, 44, 191, 0.15) 100%);
+}
+
+.users-table th {
+    padding: 1.1rem 1rem;
+    font-weight: 700;
+    color: #00d4ff;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.users-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+}
+
+.users-table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(123, 44, 191, 0.08) 100%);
+    transform: translateX(4px);
+}
+
+.users-table td {
+    padding: 1.1rem 1rem;
+    vertical-align: middle;
+    font-size: 0.95rem;
+}
+
+.font-monospace.text-primary {
+    color: #00d4ff !important;
+    font-weight: 600;
+    font-size: 0.9rem;
+    font-family: 'Courier New', monospace;
+    background: rgba(0, 212, 255, 0.1);
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.fw-medium {
+    font-weight: 600;
+    color: #fff;
+}
+
+.role-select {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(123, 44, 191, 0.15) 100%);
+    border: 2px solid rgba(0, 212, 255, 0.4);
+    color: #fff;
+    padding: 0.4rem 2.2rem 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 130px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.role-select:hover {
+    border-color: #00d4ff;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.25) 0%, rgba(123, 44, 191, 0.25) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.role-select:focus {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.25) 0%, rgba(123, 44, 191, 0.25) 100%);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.3rem rgba(0, 212, 255, 0.3);
+    color: #fff;
+}
+
+.role-select option {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 12px;
+    font-weight: 600;
+}
+
+.role-select option:checked {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    color: #fff;
+    font-weight: 700;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%) !important;
+    color: #000;
+    box-shadow: 0 2px 8px rgba(0, 255, 136, 0.3);
+}
+
+.badge.bg-secondary {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-outline-danger, .btn-outline-success {
+    border-width: 2px;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-danger {
+    color: #ff4444;
+    border-color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+}
+
+.btn-outline-success {
+    color: #00ff88;
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.btn-outline-danger:hover {
+    background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    border-color: #ff4444;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
+    color: #fff;
+}
+
+.btn-outline-success:hover {
+    background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+    border-color: #00ff88;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 255, 136, 0.4);
+    color: #000;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+    min-width: 35px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state i {
+    font-size: 5rem;
+    color: rgba(0, 212, 255, 0.3);
+    margin-bottom: 1.5rem;
+}
+
+.empty-state h4 {
+    color: #fff;
+    margin-bottom: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.empty-state p {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+}
+
+.small.text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 0.85rem;
+    font-family: 'Courier New', monospace;
+}
+
+@media (max-width: 768px) {
+    .page-title { font-size: 1.5rem; }
+    .users-table { font-size: 0.85rem; }
+    .users-table th, .users-table td { padding: 0.75rem 0.5rem; }
+}
+</style>
+{% endblock %}

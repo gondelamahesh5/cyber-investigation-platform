@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}Edit Threat {{ threat.title }} - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="threat-form-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-edit me-2"></i>Edit Threat Intelligence
+                </h1>
+                <p class="page-subtitle">Update threat intelligence entry</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('threats.view_threat', threat_id=threat.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Threat
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <form method="POST" action="{{ url_for('threats.edit_threat', threat_id=threat.id) }}">
+                <!-- Threat Details -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>Threat Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="title" class="form-label required">Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" value="{{ threat.title }}" required placeholder="Enter threat title">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="threat_type" class="form-label">Threat Type</label>
+                                <select class="form-select" id="threat_type" name="threat_type">
+                                    <option value="">Select type...</option>
+                                    {% for t in ['malware', 'phishing', 'ransomware', 'apt', 'ddos', 'zero_day', 'social_engineering', 'insider_threat', 'other'] %}
+                                    <option value="{{ t }}" {% if threat.threat_type == t %}selected{% endif %}>{{ t.replace('_', ' ')|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" placeholder="Describe this threat...">{{ threat.description or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Classification & Confidence -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-shield-alt me-2"></i>Classification & Confidence</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="severity" class="form-label">Severity</label>
+                                <select class="form-select" id="severity" name="severity">
+                                    {% for s in ['critical', 'high', 'medium', 'low'] %}
+                                    <option value="{{ s }}" {% if threat.severity == s %}selected{% endif %}>{{ s|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="confidence" class="form-label">Confidence (%)</label>
+                                <input type="number" class="form-control" id="confidence" name="confidence" min="0" max="100" value="{{ threat.confidence }}">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="tlp_level" class="form-label">TLP Level</label>
+                                <select class="form-select" id="tlp_level" name="tlp_level">
+                                    {% for l in ['red', 'amber', 'green', 'white'] %}
+                                    <option value="{{ l }}" {% if threat.tlp_level == l %}selected{% endif %}>{{ l|upper }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    {% for s in ['active', 'inactive', 'archived'] %}
+                                    <option value="{{ s }}" {% if threat.status == s %}selected{% endif %}>{{ s|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technical Details -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-code me-2"></i>Technical Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="source" class="form-label">Source</label>
+                                <input type="text" class="form-control" id="source" name="source" value="{{ threat.source or '' }}" placeholder="Threat intelligence source">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="source_url" class="form-label">Source URL</label>
+                                <input type="url" class="form-control" id="source_url" name="source_url" value="{{ threat.source_url or '' }}" placeholder="https://...">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="attack_vector" class="form-label">Attack Vector</label>
+                            <input type="text" class="form-control" id="attack_vector" name="attack_vector" value="{{ threat.attack_vector or '' }}" placeholder="e.g., Network, Email, USB">
+                        </div>
+                        <div class="mb-3">
+                            <label for="affected_platforms" class="form-label">Affected Platforms</label>
+                            <input type="text" class="form-control" id="affected_platforms" name="affected_platforms" value="{{ threat.affected_platforms or '' }}" placeholder="e.g., Windows, Linux, iOS, Android">
+                        </div>
+                        <div class="mb-3">
+                            <label for="impact" class="form-label">Impact</label>
+                            <textarea class="form-control" id="impact" name="impact" rows="3" placeholder="Describe the potential impact...">{{ threat.impact or '' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="mitigation" class="form-label">Mitigation</label>
+                            <textarea class="form-control" id="mitigation" name="mitigation" rows="3" placeholder="Describe mitigation strategies...">{{ threat.mitigation or '' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="indicators" class="form-label">Indicators</label>
+                            <textarea class="form-control" id="indicators" name="indicators" rows="3" placeholder="Separate multiple indicators with newlines">{{ threat.indicators or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-tags me-2"></i>Tags</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="tags" class="form-label">Tags</label>
+                            <input type="text" class="form-control" id="tags" name="tags" value="{{ threat.tags or '' }}" placeholder="Comma-separated tags (e.g., apt29, ransomware, critical)">
+                            <small class="text-muted">Add tags to categorize and search threats easily</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('threats.view_threat', threat_id=threat.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Form validation
+    $('form').on('submit', function() {
+        const title = $('#title').val().trim();
+        if (!title) {
+            alert('Title is required');
+            return false;
+        }
+        return true;
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.form-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.form-section-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+}
+
+.form-section-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #ff003c;
+}
+
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.form-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.form-text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .form-section-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

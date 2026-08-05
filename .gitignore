@@ -1,0 +1,55 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Secret files
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+
+# Flask instance folder
+instance/
+
+# Uploads and generated files
+uploads/
+reports/
+logs/
+backups/
+cache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.sqlite3
+*.db
+*.log
+
+# Node modules
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Archives
+*.zip
+*.rar
+*.7z
+
+# Local config
+config/local.py
+secrets.json
+credentials.json
+apikeys.json
+firebase-adminsdk*.json
+google-service-account.json

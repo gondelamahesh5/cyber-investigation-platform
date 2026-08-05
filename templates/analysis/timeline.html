@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Timeline - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="timeline-container-page">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-clock me-2"></i>Case Timeline
+                </h1>
+                <p class="page-subtitle">{{ case.case_number }} - {{ case.title }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Case
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline View -->
+    <div class="card detail-card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-list me-2"></i>Event Timeline
+                {% if events %}
+                    <span class="badge bg-info ms-2">{{ events|length }} events</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="timeline-wrapper">
+                {% for event in events %}
+                <div class="timeline-item">
+                    <div class="timeline-marker {{ 'marker-critical' if event.importance == 'critical' else 'marker-important' if event.importance == 'important' else 'marker-default' }}">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="event-title">{{ event.event_title }}</h6>
+                                <div class="event-meta">
+                                    <span class="badge bg-secondary">{{ event.event_type or 'Event' }}</span>
+                                    <span class="badge {{ 'bg-danger' if event.importance == 'critical' else 'bg-warning' if event.importance == 'important' else 'bg-info' }}">
+                                        {{ event.importance|title }}
+                                    </span>
+                                </div>
+                            </div>
+                            <small class="event-time text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ event.event_date.strftime('%Y-%m-%d %H:%M') if event.event_date else 'N/A' }}
+                            </small>
+                        </div>
+                        {% if event.event_description %}
+                        <p class="event-description text-muted mt-2 mb-0">{{ event.event_description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state text-center py-5">
+                    <i class="fas fa-clock fa-3x mb-3" style="color: rgba(255, 255, 255, 0.2);"></i>
+                    <h4 class="text-light">No Timeline Events</h4>
+                    <p class="text-muted">No timeline events for this case yet</p>
+                </div>
+                {% endfor %}
+
+                <!-- Timeline Line -->
+                <div class="timeline-line"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.detail-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.timeline-wrapper {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.timeline-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 30px;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(0, 212, 255, 0.5) 0%, rgba(123, 44, 191, 0.5) 100%);
+    z-index: 1;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-left: 70px;
+    z-index: 2;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    z-index: 3;
+    transition: all 0.3s ease;
+}
+
+.timeline-item:hover .timeline-marker {
+    transform: scale(1.1);
+}
+
+.marker-critical {
+    background: linear-gradient(135deg, #ff003c 0%, #cc0033 100%);
+    box-shadow: 0 0 15px rgba(255, 0, 60, 0.5);
+}
+
+.marker-important {
+    background: linear-gradient(135deg, #ff9500 0%, #e68a00 100%);
+    box-shadow: 0 0 15px rgba(255, 149, 0, 0.5);
+}
+
+.marker-default {
+    background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+}
+
+.timeline-content {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.timeline-content:hover {
+    background: rgba(0, 212, 255, 0.05);
+    border-color: rgba(0, 212, 255, 0.2);
+}
+
+.event-title {
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.event-meta {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.event-time {
+    font-size: 0.85rem;
+}
+
+.event-description {
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+@media (max-width: 768px) {
+    .page-title { font-size: 1.5rem; }
+    .timeline-item { padding-left: 60px; }
+    .timeline-line { left: 20px; }
+    .timeline-marker { left: -15px; width: 50px; height: 50px; font-size: 1rem; }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% block title %}Extracted Entities - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="entities-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-crosshairs me-2"></i>Extracted Entities
+                </h1>
+                <p class="page-subtitle">AI-extracted indicators and entities</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{{ url_for('analysis.extract_entities') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Extraction
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entities Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-list me-2"></i>Entity Registry
+                {% if entities.items %}
+                    <span class="badge bg-info ms-2">{{ entities.total }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 entities-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th>Case</th>
+                            <th>Confidence</th>
+                            <th>Source</th>
+                            <th>Extracted</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entity in entities.items %}
+                        <tr class="entity-row">
+                            <td>
+                                <span class="badge entity-badge entity-{{ entity.entity_type }}">
+                                    <i class="fas fa-{% if entity.entity_type == 'ipv4' or entity.entity_type == 'ipv6' %}network{% elif entity.entity_type == 'url' %}link{% elif entity.entity_type == 'email' %}envelope{% elif entity.entity_type in ['md5', 'sha1', 'sha256'] %}fingerprint{% else %}tag{% endif %} me-1"></i>
+                                    {{ entity.entity_type }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="font-monospace entity-value">{{ entity.entity_value[:60] }}{% if entity.entity_value|length > 60 %}...{% endif %}</span>
+                            </td>
+                            <td>
+                                {% if entity.case_id %}
+                                    <a href="{{ url_for('cases.view_case', case_id=entity.case_id) }}" class="case-link">Case #{{ entity.case_id }}</a>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="confidence-wrapper">
+                                    <div class="progress" style="height: 6px; width: 80px;">
+                                        <div class="progress-bar confidence-bar progress-{% if entity.confidence >= 75 %}critical{% elif entity.confidence >= 50 %}high{% else %}medium{% endif %}" style="width: {{ entity.confidence }}%;"></div>
+                                    </div>
+                                    <small class="confidence-text">{{ entity.confidence }}%</small>
+                                </div>
+                            </td>
+                            <td>{{ entity.source_type or 'N/A' }}</td>
+                            <td>{{ entity.created_at.strftime('%Y-%m-%d %H:%M') if entity.created_at else 'N/A' }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm action-btns">
+                                    <a href="{{ url_for('analysis.view_entity', entity_id=entity.id) }}" class="btn btn-view" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="fas fa-crosshairs"></i>
+                                    <h4>No Entities Extracted Yet</h4>
+                                    <p class="text-muted">Start extracting entities from documents</p>
+                                    <a href="{{ url_for('analysis.extract_entities') }}" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>Extract Entities
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if entities.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if entities.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('analysis.list_entities', page=entities.prev_num) }}">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+            </li>
+            {% endif %}
+
+            {% for page_num in entities.iter_pages() %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == entities.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('analysis.list_entities', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if entities.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('analysis.list_entities', page=entities.next_num) }}">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.entities-table {
+    margin-bottom: 0;
+}
+
+.entities-table thead {
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.entities-table th {
+    padding: 1rem;
+    font-weight: 600;
+    color: #00d4ff;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+}
+
+.entities-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.entities-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.entities-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.entity-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.entity-ipv4 { background: rgba(0, 212, 255, 0.2); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.3); }
+.entity-ipv6 { background: rgba(123, 44, 191, 0.2); color: #7b2cbf; border: 1px solid rgba(123, 44, 191, 0.3); }
+.entity-domain { background: rgba(255, 149, 0, 0.2); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.3); }
+.entity-url { background: rgba(255, 0, 60, 0.2); color: #ff003c; border: 1px solid rgba(255, 0, 60, 0.3); }
+.entity-email { background: rgba(0, 255, 136, 0.2); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.3); }
+.entity-md5 { background: rgba(108, 117, 125, 0.2); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
+.entity-sha1 { background: rgba(108, 117, 125, 0.2); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
+.entity-sha256 { background: rgba(108, 117, 125, 0.2); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
+.entity-file_path { background: rgba(0, 212, 255, 0.2); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.3); }
+
+.entity-value {
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.case-link {
+    color: #00d4ff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.case-link:hover {
+    color: #00d4ff;
+    text-decoration: underline;
+}
+
+.confidence-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.confidence-bar {
+    border-radius: 3px;
+}
+
+.confidence-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+}
+
+.action-btns {
+    gap: 0.25rem;
+}
+
+.btn-view {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.btn-view:hover {
+    background: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+    transform: translateY(-1px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.pagination {
+    gap: 0.25rem;
+}
+
+.page-link {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border-color: transparent;
+    color: #fff;
+}
+
+.page-item.disabled .page-link {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .entities-table {
+        font-size: 0.9rem;
+    }
+    
+    .action-btns {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

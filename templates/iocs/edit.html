@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% block title %}Edit IOC {{ ioc.ioc_value }} - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="ioc-form-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-edit me-2"></i>Edit IOC
+                </h1>
+                <p class="page-subtitle">Update indicator of compromise details</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('iocs.view_ioc', ioc_id=ioc.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to IOC
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <form method="POST" action="{{ url_for('iocs.edit_ioc', ioc_id=ioc.id) }}">
+                <!-- IOC Details -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>IOC Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ioc_type" class="form-label">IOC Type</label>
+                                <select class="form-select" id="ioc_type" name="ioc_type">
+                                    {% for t in ['ipv4', 'ipv6', 'domain', 'url', 'email', 'md5', 'sha1', 'sha256', 'cve', 'file_path', 'phone', 'mac'] %}
+                                    <option value="{{ t }}" {% if ioc.ioc_type == t %}selected{% endif %}>{{ t|upper }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    {% for s in ['active', 'inactive', 'archived'] %}
+                                    <option value="{{ s }}" {% if ioc.status == s %}selected{% endif %}>{{ s|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ioc_value" class="form-label required">IOC Value *</label>
+                            <input type="text" class="form-control font-monospace" id="ioc_value" name="ioc_value" value="{{ ioc.ioc_value }}" required placeholder="Enter the indicator value">
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Describe this indicator...">{{ ioc.description or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Threat Classification -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-shield-alt me-2"></i>Threat Classification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="threat_level" class="form-label">Threat Level</label>
+                                <select class="form-select" id="threat_level" name="threat_level">
+                                    {% for l in ['critical', 'high', 'medium', 'low'] %}
+                                    <option value="{{ l }}" {% if ioc.threat_level == l %}selected{% endif %}>{{ l|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="confidence" class="form-label">Confidence (%)</label>
+                                <input type="number" class="form-control" id="confidence" name="confidence" min="0" max="100" value="{{ ioc.confidence }}">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="tlp_level" class="form-label">TLP Level</label>
+                                <select class="form-select" id="tlp_level" name="tlp_level">
+                                    {% for l in ['red', 'amber', 'green', 'white'] %}
+                                    <option value="{{ l }}" {% if ioc.tlp_level == l %}selected{% endif %}>{{ l|upper }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="source" class="form-label">Source</label>
+                                <input type="text" class="form-control" id="source" name="source" value="{{ ioc.source or '' }}" placeholder="Where IOC was found">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-tags me-2"></i>Tags</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="tags" class="form-label">Tags</label>
+                            <input type="text" class="form-control" id="tags" name="tags" value="{{ ioc.tags or '' }}" placeholder="Comma-separated tags (e.g., malware, phishing, apt29)">
+                            <small class="text-muted">Add tags to categorize and search IOCs easily</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('iocs.view_ioc', ioc_id=ioc.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Form validation
+    $('form').on('submit', function() {
+        const iocType = $('#ioc_type').val();
+        const iocValue = $('#ioc_value').val().trim();
+        
+        if (!iocType || !iocValue) {
+            alert('IOC Type and Value are required');
+            return false;
+        }
+        return true;
+    });
+
+    // Auto-uppercase for certain IOC types
+    $('#ioc_value').on('input', function() {
+        const iocType = $('#ioc_type').val();
+        if (['domain', 'url', 'email'].includes(iocType)) {
+            $(this).val($(this).val().toLowerCase());
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.form-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.form-section-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+}
+
+.form-section-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #ff003c;
+}
+
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.form-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.form-text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .form-section-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

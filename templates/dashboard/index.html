@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Header -->
+    <div class="dashboard-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-shield-halved me-2"></i>Welcome back, {{ current_user.full_name }}
+                </h1>
+                <p class="dashboard-subtitle">Monitor and manage your cyber investigations</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('cases.new_case') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Case
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(0, 212, 255, 0.2); color: var(--cyber-blue);">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <div class="stat-value">{{ stats.total_cases }}</div>
+            <div class="stat-label">Total Cases</div>
+            <small class="text-muted">{{ stats.open_cases }} open</small>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(123, 44, 191, 0.2); color: var(--cyber-purple);">
+                <i class="fas fa-database"></i>
+            </div>
+            <div class="stat-value">{{ stats.total_evidence }}</div>
+            <div class="stat-label">Evidence Items</div>
+            <small class="text-muted">{{ stats.pending_evidence }} pending review</small>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(255, 0, 110, 0.2); color: var(--cyber-pink);">
+                <i class="fas fa-crosshairs"></i>
+            </div>
+            <div class="stat-value">{{ stats.total_iocs }}</div>
+            <div class="stat-label">IOCs Tracked</div>
+            <small class="text-muted">{{ stats.critical_iocs }} critical</small>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(0, 255, 136, 0.2); color: var(--cyber-green);">
+                <i class="fas fa-biohazard"></i>
+            </div>
+            <div class="stat-value">{{ stats.total_threats }}</div>
+            <div class="stat-label">Threats</div>
+            <small class="text-muted">{{ stats.active_threats }} active</small>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>Case Activity</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="caseActivityChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>Case Priority</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="priorityChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity and Quick Actions -->
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title"><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                    <a href="{{ url_for('settings.audit_logs') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Resource</th>
+                                    <th>User</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in recent_activities %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if activity.status == 'success' else 'danger' }}">
+                                            {{ activity.action }}
+                                        </span>
+                                    </td>
+                                    <td>{{ activity.resource_type or 'N/A' }}</td>
+                                    <td>{{ activity.user.username if activity.user else 'System' }}</td>
+                                    <td class="text-muted">{{ activity.created_at.strftime('%Y-%m-%d %H:%M') if activity.created_at }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">No recent activity</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('cases.new_case') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Create New Case
+                        </a>
+                        <a href="{{ url_for('evidence.upload_evidence') }}" class="btn btn-outline-success">
+                            <i class="fas fa-upload me-2"></i>Upload Evidence
+                        </a>
+                        <a href="{{ url_for('iocs.new_ioc') }}" class="btn btn-outline-warning">
+                            <i class="fas fa-crosshairs me-2"></i>Add IOC
+                        </a>
+                        <a href="{{ url_for('analysis.summarize') }}" class="btn btn-outline-info">
+                            <i class="fas fa-robot me-2"></i>AI Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Widget -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title"><i class="fas fa-bell me-2"></i>Notifications</h5>
+                    {% if unread_count > 0 %}
+                    <span class="badge bg-danger">{{ unread_count }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if notifications %}
+                        {% for notification in notifications[:5] %}
+                        <div class="notification-item p-3 border-bottom">
+                            <div class="d-flex align-items-start">
+                                <div class="me-2">
+                                    <i class="fas fa-circle text-{{ 'danger' if notification.severity == 'critical' else 'warning' if notification.severity == 'high' else 'info' }}"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <strong>{{ notification.title }}</strong>
+                                    <p class="text-muted small mb-0">{{ notification.message[:100] }}</p>
+                                    <small class="text-muted">{{ notification.created_at.strftime('%Y-%m-%d %H:%M') if notification.created_at }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">No notifications</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Chart data from server
+    const activityLabels = {{ case_activity_chart.labels | tojson }};
+    const activityValues = {{ case_activity_chart.data | tojson }};
+    const priorityLabels = {{ priority_chart.labels | tojson }};
+    const priorityValues = {{ priority_chart.data | tojson }};
+    
+    // Case Activity Chart
+    const caseActivityCtx = document.getElementById('caseActivityChart');
+    if (caseActivityCtx) {
+        new Chart(caseActivityCtx, {
+            type: 'line',
+            data: {
+                labels: activityLabels,
+                datasets: [{
+                    label: 'Cases Created',
+                    data: activityValues,
+                    borderColor: '#00d4ff',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#00d4ff',
+                    pointBorderColor: '#00d4ff',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            color: '#64748b'
+                        },
+                        grid: {
+                            color: '#e2e8f0'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#64748b'
+                        },
+                        grid: {
+                            color: '#e2e8f0'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Priority Distribution Chart
+    const priorityCtx = document.getElementById('priorityChart');
+    if (priorityCtx) {
+        new Chart(priorityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: priorityLabels,
+                datasets: [{
+                    data: priorityValues,
+                    backgroundColor: [
+                        'rgba(255, 0, 60, 0.8)',
+                        'rgba(255, 149, 0, 0.8)',
+                        'rgba(0, 212, 255, 0.8)',
+                        'rgba(123, 44, 191, 0.8)'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#475569',
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Settings - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </h1>
+                <p class="page-subtitle">Configure platform settings and preferences</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Navigation Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card settings-nav-card h-100">
+                <div class="card-body text-center py-4">
+                    <div class="nav-icon nav-icon-primary">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h5>Profile</h5>
+                    <p class="text-muted small">Update your profile and password</p>
+                    <a href="{{ url_for('settings.profile') }}" class="btn btn-primary">Manage</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card settings-nav-card h-100">
+                <div class="card-body text-center py-4">
+                    <div class="nav-icon nav-icon-success">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5>User Management</h5>
+                    <p class="text-muted small">Manage users and roles</p>
+                    <a href="{{ url_for('settings.users') }}" class="btn btn-success">Manage</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card settings-nav-card h-100">
+                <div class="card-body text-center py-4">
+                    <div class="nav-icon nav-icon-info">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <h5>Audit Logs</h5>
+                    <p class="text-muted small">View system activity logs</p>
+                    <a href="{{ url_for('settings.audit_logs') }}" class="btn btn-info">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card settings-nav-card h-100">
+                <div class="card-body text-center py-4">
+                    <div class="nav-icon nav-icon-warning">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h5>Backup & Restore</h5>
+                    <p class="text-muted small">Backup and restore data</p>
+                    <a href="{{ url_for('settings.backup') }}" class="btn btn-warning">Manage</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Settings Form -->
+    <div class="card form-section-card">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-sliders me-2"></i>System Settings</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('settings.update_general') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Platform Name</label>
+                        <input type="text" class="form-control" name="setting_key" value="platform_name" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Value</label>
+                        <input type="text" class="form-control" name="setting_value" value="Cyber Investigation Platform">
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.settings-nav-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.settings-nav-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.15);
+}
+
+.nav-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin: 0 auto 1rem;
+}
+
+.nav-icon-primary { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+.nav-icon-success { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+.nav-icon-info { background: rgba(123, 44, 191, 0.2); color: #7b2cbf; }
+.nav-icon-warning { background: rgba(255, 149, 0, 0.2); color: #ff9500; }
+
+.btn-primary, .btn-success, .btn-info, .btn-warning {
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover, .btn-success:hover, .btn-info:hover, .btn-warning:hover {
+    transform: translateY(-2px);
+}
+
+.form-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.75rem;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .page-title { font-size: 1.5rem; }
+}
+</style>
+{% endblock %}

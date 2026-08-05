@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% block title %}Summaries - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="summaries-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-file-lines me-2"></i>Document Summaries
+                </h1>
+                <p class="page-subtitle">AI-generated summaries and key points</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{{ url_for('analysis.summarize') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Summary
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summaries Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-list me-2"></i>Summary History
+                {% if summaries.items %}
+                    <span class="badge bg-info ms-2">{{ summaries.total }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 summaries-table">
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Type</th>
+                            <th>Summary Length</th>
+                            <th>Compression</th>
+                            <th>Sentiment</th>
+                            <th>Created</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for summary in summaries.items %}
+                        <tr class="summary-row">
+                            <td>
+                                <a href="{{ url_for('analysis.view_summary', summary_id=summary.id) }}" class="summary-title">
+                                    {{ summary.document_name[:50] }}{% if summary.document_name|length > 50 %}...{% endif %}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge type-badge">{{ summary.document_type or 'Unknown' }}</span>
+                            </td>
+                            <td>{{ summary.summary_length }} words</td>
+                            <td>
+                                <span class="compression-badge compression-{% if summary.compression_ratio|float >= 0.5 %}high{% elif summary.compression_ratio|float >= 0.3 %}medium{% else %}low{% endif %}">
+                                    {{ summary.compression_ratio|float|round(2) }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge sentiment-badge sentiment-{{ summary.sentiment }}">
+                                    <i class="fas fa-{% if summary.sentiment == 'positive' %}smile{% elif summary.sentiment == 'negative' %}frown{% else %}meh{% endif %} me-1"></i>
+                                    {{ summary.sentiment|title }}
+                                </span>
+                            </td>
+                            <td>{{ summary.created_at.strftime('%Y-%m-%d %H:%M') if summary.created_at else 'N/A' }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm action-btns">
+                                    <a href="{{ url_for('analysis.view_summary', summary_id=summary.id) }}" class="btn btn-view" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="fas fa-file-lines"></i>
+                                    <h4>No Summaries Yet</h4>
+                                    <p class="text-muted">Start analyzing documents to generate summaries</p>
+                                    <a href="{{ url_for('analysis.summarize') }}" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>Create First Summary
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if summaries.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if summaries.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('analysis.list_summaries', page=summaries.prev_num) }}">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+            </li>
+            {% endif %}
+
+            {% for page_num in summaries.iter_pages() %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == summaries.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('analysis.list_summaries', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if summaries.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('analysis.list_summaries', page=summaries.next_num) }}">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.summaries-table {
+    margin-bottom: 0;
+}
+
+.summaries-table thead {
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.summaries-table th {
+    padding: 1rem;
+    font-weight: 600;
+    color: #00d4ff;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+}
+
+.summaries-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.summaries-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.summaries-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.summary-title {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.summary-title:hover {
+    color: #00d4ff;
+    text-decoration: none;
+}
+
+.type-badge {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.compression-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.compression-high {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.compression-medium {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.compression-low {
+    background: rgba(108, 117, 125, 0.2);
+    color: #adb5bd;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.sentiment-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.sentiment-positive {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.sentiment-negative {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.sentiment-neutral {
+    background: rgba(108, 117, 125, 0.2);
+    color: #adb5bd;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.action-btns {
+    gap: 0.25rem;
+}
+
+.btn-view {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.btn-view:hover {
+    background: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+    transform: translateY(-1px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.pagination {
+    gap: 0.25rem;
+}
+
+.page-link {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border-color: transparent;
+    color: #fff;
+}
+
+.page-item.disabled .page-link {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .summaries-table {
+        font-size: 0.9rem;
+    }
+    
+    .action-btns {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

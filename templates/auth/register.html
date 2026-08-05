@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Register - Cyber Investigation Platform{% endblock %}
+
+{% block auth_content %}
+<div class="auth-page">
+    <!-- Animated Background -->
+    <div class="cyber-bg">
+        <div class="particles" id="particles"></div>
+        <div class="grid-pattern"></div>
+    </div>
+
+    <div class="auth-container auth-container-lg">
+        <div class="auth-card glass">
+            <!-- Logo -->
+            <div class="auth-logo">
+                <i class="fas fa-shield-halved"></i>
+                <h1 class="auth-title">Create Account</h1>
+                <p class="auth-subtitle">Join the AI-Powered Threat Intelligence Platform</p>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'danger' else 'info-circle' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Registration Form -->
+            <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form" id="registerForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Full Name *</label>
+                            <div class="input-group">
+                                <span class="input-icon"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" name="full_name" placeholder="John Doe" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Username *</label>
+                            <div class="input-group">
+                                <span class="input-icon"><i class="fas fa-at"></i></span>
+                                <input type="text" class="form-control" name="username" placeholder="johndoe" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <div class="input-group">
+                        <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                        <input type="email" class="form-control" name="email" placeholder="john@example.com" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <div class="input-group">
+                                <span class="input-icon"><i class="fas fa-phone"></i></span>
+                                <input type="tel" class="form-control" name="phone" placeholder="+1 234 567 8900">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Organization</label>
+                            <div class="input-group">
+                                <span class="input-icon"><i class="fas fa-building"></i></span>
+                                <input type="text" class="form-control" name="department" placeholder="Company Name">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Role *</label>
+                    <div class="input-group">
+                        <span class="input-icon"><i class="fas fa-user-shield"></i></span>
+                        <select class="form-control" name="role" required>
+                            <option value="">Select Role</option>
+                            <option value="analyst">Analyst</option>
+                            <option value="investigator">Investigator</option>
+                            <option value="viewer">Viewer</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password *</label>
+                    <div class="input-group">
+                        <span class="input-icon"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" name="password" placeholder="Create a strong password" required id="passwordField">
+                        <button type="button" class="password-toggle" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <small class="strength-text" id="strengthText">Password strength</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm Password *</label>
+                    <div class="input-group">
+                        <span class="input-icon"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" name="confirm_password" placeholder="Repeat your password" required id="confirmPasswordField">
+                    </div>
+                    <small class="text-muted" id="passwordMatch"></small>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" name="terms" id="terms" required>
+                    <label class="form-check-label" for="terms">
+                        I agree to the <a href="#" class="auth-link">Terms of Service</a> and <a href="#" class="auth-link">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
+                    <span class="btn-text">Create Account</span>
+                    <span class="btn-loader" style="display: none;">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Already have an account? <a href="{{ url_for('auth.login') }}" class="auth-link">Sign In</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

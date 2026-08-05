@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}SOC Command Login - Cyber Investigation Platform{% endblock %}
+
+{% block auth_content %}
+<div class="xdr-login-page">
+    <div class="xdr-shell">
+        <section class="xdr-intel-panel" aria-label="Global threat operations overview">
+            <div class="xdr-panel-glow xdr-panel-glow-one"></div>
+            <div class="xdr-panel-glow xdr-panel-glow-two"></div>
+            <div class="xdr-map-grid"></div>
+            <div class="xdr-particles" id="particles"></div>
+
+            <div class="xdr-brand-bar">
+                <div class="xdr-brand-mark"><i class="fas fa-shield-halved"></i></div>
+                <div>
+                    <span class="xdr-kicker">CyberIntel XDR</span>
+                    <strong>Unified Defense Console</strong>
+                </div>
+            </div>
+
+            <div class="xdr-map-wrap">
+                <svg class="xdr-world-map" viewBox="0 0 900 470" role="img" aria-label="Animated global threat map">
+                    <defs>
+                        <linearGradient id="mapStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#39dcff" />
+                            <stop offset="48%" stop-color="#7b61ff" />
+                            <stop offset="100%" stop-color="#ff3fd4" />
+                        </linearGradient>
+                        <filter id="mapGlow">
+                            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                            <feMerge>
+                                <feMergeNode in="coloredBlur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <path class="xdr-continent" d="M105 163 151 132 213 144 248 180 223 217 162 220 118 197Z" />
+                    <path class="xdr-continent" d="M247 248 297 261 330 316 303 394 260 431 232 362Z" />
+                    <path class="xdr-continent" d="M392 132 470 105 573 120 635 160 602 215 514 216 462 190 404 199 358 171Z" />
+                    <path class="xdr-continent" d="M512 229 558 267 572 335 540 397 492 347 477 283Z" />
+                    <path class="xdr-continent" d="M640 188 725 167 816 203 792 262 698 266 640 239Z" />
+                    <path class="xdr-continent" d="M705 330 785 348 820 398 766 430 704 393Z" />
+                    <path class="xdr-route route-one" d="M180 185 C 310 75, 490 80, 660 208" />
+                    <path class="xdr-route route-two" d="M262 338 C 378 240, 508 222, 742 368" />
+                    <path class="xdr-route route-three" d="M554 168 C 465 290, 352 310, 188 186" />
+                    <g class="xdr-node node-a"><circle cx="180" cy="185" r="8" /><circle cx="180" cy="185" r="22" /></g>
+                    <g class="xdr-node node-b"><circle cx="554" cy="168" r="8" /><circle cx="554" cy="168" r="24" /></g>
+                    <g class="xdr-node node-c"><circle cx="742" cy="368" r="8" /><circle cx="742" cy="368" r="22" /></g>
+                    <g class="xdr-node node-d"><circle cx="660" cy="208" r="7" /><circle cx="660" cy="208" r="20" /></g>
+                </svg>
+
+                <div class="xdr-threat-chip chip-one">
+                    <i class="fas fa-bolt"></i>
+                    <span>Credential spray blocked</span>
+                </div>
+                <div class="xdr-threat-chip chip-two">
+                    <i class="fas fa-fingerprint"></i>
+                    <span>Identity risk contained</span>
+                </div>
+                <div class="xdr-radar"></div>
+            </div>
+
+            <div class="xdr-hero-copy">
+                <p class="xdr-eyebrow">Live SOC telemetry</p>
+                <h1>Secure access to the investigation command center.</h1>
+                <p>Correlate cases, evidence, IOCs, malware signals, and analyst activity from one hardened enterprise workspace.</p>
+            </div>
+
+            <div class="xdr-stat-grid" aria-label="Security platform statistics">
+                <div class="xdr-stat-card">
+                    <span class="xdr-stat-value">98.7%</span>
+                    <span>Detection fidelity</span>
+                </div>
+                <div class="xdr-stat-card">
+                    <span class="xdr-stat-value">24/7</span>
+                    <span>Analyst coverage</span>
+                </div>
+                <div class="xdr-stat-card">
+                    <span class="xdr-stat-value">12ms</span>
+                    <span>Signal triage</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="xdr-auth-panel" aria-label="Authentication">
+            <div class="xdr-auth-card">
+                <div class="xdr-card-sheen"></div>
+                <div class="xdr-auth-header">
+                    <div class="xdr-auth-icon"><i class="fas fa-lock"></i></div>
+                    <div>
+                        <p class="xdr-eyebrow">Zero trust gateway</p>
+                        <h2>Operator sign in</h2>
+                    </div>
+                </div>
+                <p class="xdr-auth-subtitle">Authenticate to continue monitoring active investigations and threat intelligence workflows.</p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="xdr-alert-stack">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show xdr-alert" role="alert">
+                                    <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'danger' else 'circle-info' }}"></i>
+                                    <span>{{ message }}</span>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('auth.login') }}" class="xdr-auth-form" id="loginForm">
+                    <div class="xdr-field">
+                        <label for="usernameField">Username</label>
+                        <div class="xdr-input-shell">
+                            <i class="fas fa-user-shield"></i>
+                            <input type="text" id="usernameField" name="username" placeholder="analyst@enterprise" required autofocus autocomplete="username">
+                        </div>
+                    </div>
+
+                    <div class="xdr-field">
+                        <label for="passwordField">Password</label>
+                        <div class="xdr-input-shell">
+                            <i class="fas fa-key"></i>
+                            <input type="password" id="passwordField" name="password" placeholder="Enter secure password" required autocomplete="current-password">
+                            <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="xdr-form-row">
+                        <div class="xdr-check">
+                            <input type="checkbox" name="remember" id="remember">
+                            <label for="remember">Keep this device trusted</label>
+                        </div>
+                        <a href="{{ url_for('auth.forgot_password') }}" class="xdr-link">Reset access</a>
+                    </div>
+
+                    <button type="submit" class="xdr-submit" id="loginBtn">
+                        <span class="btn-text">Enter SOC Console</span>
+                        <span class="btn-loader" style="display: none;"><span class="spinner-border spinner-border-sm"></span></span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="xdr-auth-footer">
+                    <span><i class="fas fa-circle-check"></i> SSO-ready encrypted session</span>
+                    <a href="{{ url_for('auth.register') }}" class="xdr-link">Request operator access</a>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

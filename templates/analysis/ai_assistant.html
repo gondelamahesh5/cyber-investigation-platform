@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+{% block title %}AI Investigation Assistant{% endblock %}
+
+{% block content %}
+<div class="ai-assistant-container">
+    <div class="ai-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="ai-title">
+                    <i class="fas fa-robot me-2"></i>AI Investigation Assistant
+                </h1>
+                <p class="ai-subtitle">Intelligent case analysis and recommendations</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case Selection -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-search me-2"></i>Select Case for Analysis</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <select class="form-control" id="caseSelect">
+                        <option value="">Choose a case to analyze...</option>
+                        {% for case in recent_cases %}
+                        <option value="{{ case.id }}">{{ case.title }} - {{ case.status }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary w-100" onclick="analyzeCase()">
+                        <i class="fas fa-brain me-2"></i>Analyze Case
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Upload Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-file-upload me-2"></i>Upload File for Analysis</h5>
+        </div>
+        <div class="card-body">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="case_id_upload" class="form-label">Select Case (Optional)</label>
+                            <select class="form-control" id="case_id_upload">
+                                <option value="">No case - Standalone analysis</option>
+                                {% for case in recent_cases %}
+                                <option value="{{ case.id }}">{{ case.title }} - {{ case.status }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="analysis_type" class="form-label">Analysis Type</label>
+                            <select class="form-control" id="analysis_type">
+                                <option value="general">General Analysis</option>
+                                <option value="pdf">PDF Document</option>
+                                <option value="image">Image/OCR</option>
+                                <option value="email">Email Header</option>
+                                <option value="log">Log File</option>
+                                <option value="malware">Malware/Binary</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="fileUpload" class="form-label">Upload File</label>
+                    <input type="file" class="form-control" id="fileUpload" name="file">
+                    <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Supported formats: PDF, Images (JPG, PNG, GIF), Text files, CSV, Excel, EML, ZIP, DOC/DOCX
+                    </div>
+                </div>
+
+                <!-- Upload Zone -->
+                <div class="upload-zone" id="uploadZone">
+                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                    <p class="upload-text">Drag and drop files here or click to browse</p>
+                    <p class="upload-hint">Maximum file size: 50MB</p>
+                </div>
+
+                <div class="mt-3">
+                    <button type="button" class="btn btn-primary" onclick="uploadAndAnalyze()">
+                        <i class="fas fa-upload me-2"></i>Upload and Analyze
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Analysis Results -->
+    <div id="analysisResults" style="display: none;">
+        <!-- Risk Score & Confidence -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>Risk Assessment</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="risk-score-circle">
+                            <svg class="progress-ring" width="200" height="200">
+                                <circle class="progress-ring-circle" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="transparent" r="90" cx="100" cy="100"/>
+                                <circle id="riskCircle" class="progress-ring-circle" stroke="#00d4ff" stroke-width="8" fill="transparent" r="90" cx="100" cy="100" stroke-dasharray="565.48" stroke-dashoffset="565.48" stroke-linecap="round"/>
+                            </svg>
+                            <div class="risk-score-text">
+                                <span id="riskScore">0</span>
+                                <small>/ 100</small>
+                            </div>
+                        </div>
+                        <p class="mt-3">Risk Score</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-check-circle me-2"></i>Confidence Level</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="confidence-score-circle">
+                            <svg class="progress-ring" width="200" height="200">
+                                <circle class="progress-ring-circle" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="transparent" r="90" cx="100" cy="100"/>
+                                <circle id="confidenceCircle" class="progress-ring-circle" stroke="#00ff88" stroke-width="8" fill="transparent" r="90" cx="100" cy="100" stroke-dasharray="565.48" stroke-dashoffset="565.48" stroke-linecap="round"/>
+                            </svg>
+                            <div class="confidence-score-text">
+                                <span id="confidenceScore">0</span>
+                                <small>%</small>
+                            </div>
+                        </div>
+                        <p class="mt-3">Evidence Confidence</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Summary -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-file-alt me-2"></i>AI-Generated Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="ai-summary" id="aiSummary">
+                    <p class="text-muted">Select a case and click analyze to generate summary...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-lightbulb me-2"></i>AI Insights</h5>
+            </div>
+            <div class="card-body">
+                <div id="insightsContainer">
+                    <p class="text-muted">No insights available yet...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-tasks me-2"></i>Recommendations</h5>
+            </div>
+            <div class="card-body">
+                <div id="recommendationsContainer">
+                    <p class="text-muted">No recommendations available yet...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Cases -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-link me-2"></i>Related Cases</h5>
+            </div>
+            <div class="card-body">
+                <div id="relatedCasesContainer">
+                    <p class="text-muted">No related cases found yet...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function analyzeCase() {
+    const caseId = document.getElementById('caseSelect').value;
+    if (!caseId) {
+        alert('Please select a case');
+        return;
+    }
+
+    // Show loading
+    document.getElementById('analysisResults').style.display = 'block';
+    document.getElementById('aiSummary').innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Analyzing case...</p></div>';
+
+    // Fetch analysis
+    fetch(`/api/ai/analyze-case/${caseId}`)
+        .then(response => response.json())
+        .then(data => {
+            displayResults(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error analyzing case');
+        });
+}
+
+function uploadAndAnalyze() {
+    const fileInput = document.getElementById('fileUpload');
+    const caseId = document.getElementById('case_id_upload').value;
+    const analysisType = document.getElementById('analysis_type').value;
+    const formData = new FormData();
+    
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select a file to upload');
+        return;
+    }
+    
+    formData.append('file', fileInput.files[0]);
+    if (caseId) {
+        formData.append('case_id', caseId);
+    }
+    formData.append('analysis_type', analysisType);
+    
+    // Show loading
+    document.getElementById('analysisResults').style.display = 'block';
+    document.getElementById('aiSummary').innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Uploading and analyzing file...</p></div>';
+    
+    // Upload and analyze
+    fetch('/api/ai/upload-and-analyze', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        displayResults(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error uploading or analyzing file');
+    });
+}
+
+function displayResults(data) {
+    // Display risk score
+    animateScore('riskScore', data.risk_score);
+    animateCircle('riskCircle', data.risk_score, '#00d4ff');
+
+    // Display confidence
+    animateScore('confidenceScore', data.confidence);
+    animateCircle('confidenceCircle', data.confidence, '#00ff88');
+
+    // Display summary
+    document.getElementById('aiSummary').innerHTML = `<p>${data.summary}</p>`;
+
+    // Display insights
+    const insightsContainer = document.getElementById('insightsContainer');
+    if (data.insights && data.insights.length > 0) {
+        insightsContainer.innerHTML = data.insights.map(insight => `
+            <div class="alert alert-${insight.type}">
+                <strong>${insight.title}</strong><br>
+                ${insight.message}
+            </div>
+        `).join('');
+    } else {
+        insightsContainer.innerHTML = '<p class="text-muted">No insights available</p>';
+    }
+
+    // Display recommendations
+    const recommendationsContainer = document.getElementById('recommendationsContainer');
+    if (data.recommendations && data.recommendations.length > 0) {
+        recommendationsContainer.innerHTML = '<div class="list-group">' + data.recommendations.map(rec => `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${rec.action}</strong><br>
+                        <small class="text-muted">${rec.reason}</small>
+                    </div>
+                    <span class="badge bg-${rec.priority === 'high' ? 'danger' : rec.priority === 'medium' ? 'warning' : 'info'}">${rec.priority}</span>
+                </div>
+            </div>
+        `).join('') + '</div>';
+    } else {
+        recommendationsContainer.innerHTML = '<p class="text-muted">No recommendations available</p>';
+    }
+
+    // Display related cases
+    const relatedCasesContainer = document.getElementById('relatedCasesContainer');
+    if (data.related_cases && data.related_cases.length > 0) {
+        relatedCasesContainer.innerHTML = '<div class="list-group">' + data.related_cases.map(related => `
+            <a href="/cases/${related.id}" class="list-group-item list-group-item-action">
+                <strong>${related.title}</strong><br>
+                <small class="text-muted">${related.reason}</small>
+            </a>
+        `).join('') + '</div>';
+    } else {
+        relatedCasesContainer.innerHTML = '<p class="text-muted">No related cases found</p>';
+    }
+}
+
+function animateScore(elementId, targetScore) {
+    const element = document.getElementById(elementId);
+    let current = 0;
+    const increment = targetScore / 50;
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= targetScore) {
+            current = targetScore;
+            clearInterval(timer);
+        }
+        element.textContent = Math.round(current);
+    }, 20);
+}
+
+function animateCircle(elementId, score, color) {
+    const circle = document.getElementById(elementId);
+    const circumference = 565.48;
+    const offset = circumference - (score / 100) * circumference;
+    
+    setTimeout(() => {
+        circle.style.transition = 'stroke-dashoffset 1s ease-in-out';
+        circle.style.strokeDashoffset = offset;
+    }, 100);
+}
+
+// Drag and drop functionality
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileUpload');
+
+if (uploadZone && fileInput) {
+    uploadZone.addEventListener('click', () => fileInput.click());
+    
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('drag-over');
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            updateUploadText(files[0]);
+        }
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            updateUploadText(e.target.files[0]);
+        }
+    });
+}
+
+function updateUploadText(file) {
+    const uploadText = document.querySelector('#uploadZone .upload-text');
+    if (uploadText) {
+        uploadText.textContent = `Selected: ${file.name}`;
+    }
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.upload-zone {
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.02);
+    margin-top: 1rem;
+}
+
+.upload-zone:hover {
+    border-color: rgba(0, 212, 255, 0.5);
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.upload-zone.drag-over {
+    border-color: #00d4ff;
+    background: rgba(0, 212, 255, 0.1);
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 4rem;
+    color: rgba(0, 212, 255, 0.5);
+    margin-bottom: 1rem;
+}
+
+.upload-text {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.upload-hint {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.form-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.form-text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+@media (max-width: 768px) {
+    .upload-zone {
+        padding: 2rem 1rem;
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+    }
+}
+</style>
+{% endblock %}

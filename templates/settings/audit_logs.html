@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="audit-logs-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-clipboard-list me-2"></i>Audit Logs
+                </h1>
+                <p class="page-subtitle">System activity and user actions</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('settings.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Settings
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card form-section-card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-filter me-2"></i>Filter Logs</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-5">
+                    <label for="action" class="form-label">Action Type</label>
+                    <select class="form-select" id="action" name="action">
+                        <option value="">All Actions</option>
+                        {% for a in ['login', 'logout', 'create_case', 'update_case', 'delete_case', 'upload_evidence', 'create_ioc', 'create_threat', 'generate_report', 'summarize_document', 'extract_entities', 'log_analysis', 'email_analysis', 'ocr_analysis', 'pdf_analysis', 'malware_analysis', 'create_backup', 'restore_backup'] %}
+                        <option value="{{ a }}" {% if action == a %}selected{% endif %}>{{ a.replace('_', ' ')|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label for="user_id" class="form-label">User</label>
+                    <select class="form-select" id="user_id" name="user_id">
+                        <option value="">All Users</option>
+                        {% for u in users %}
+                        <option value="{{ u.id }}" {% if user_id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-list me-2"></i>Activity Log
+                {% if logs.items %}
+                    <span class="badge bg-info ms-2">{{ logs.total }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 audit-table">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Resource</th>
+                            <th>Description</th>
+                            <th>User</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs.items %}
+                        <tr class="log-row">
+                            <td><span class="badge action-badge">{{ log.action }}</span></td>
+                            <td>{{ log.resource_type or 'N/A' }}</td>
+                            <td class="small text-muted">{{ log.description or '' }}</td>
+                            <td>{% if log.user %}{{ log.user.username }}{% endif %}</td>
+                            <td class="font-monospace small">{{ log.ip_address or 'N/A' }}</td>
+                            <td>
+                                <span class="badge status-badge status-{% if log.status == 'success' %}success{% else %}danger{% endif %}">
+                                    <i class="fas fa-{% if log.status == 'success' %}check{% else %}times{% endif %} me-1"></i>
+                                    {{ log.status }}
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    <h4>No Audit Logs Found</h4>
+                                    <p class="text-muted">No logs matching your criteria</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if logs.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if logs.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('settings.audit_logs', page=logs.prev_num, action=action, user_id=user_id) }}">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            </li>
+            {% endif %}
+
+            {% for page_num in logs.iter_pages() %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == logs.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('settings.audit_logs', page=page_num, action=action, user_id=user_id) }}">{{ page_num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if logs.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('settings.audit_logs', page=logs.next_num, action=action, user_id=user_id) }}">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.form-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.form-select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.audit-table thead {
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.audit-table th {
+    padding: 1rem;
+    font-weight: 600;
+    color: #00d4ff;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+}
+
+.audit-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.audit-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.audit-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.action-badge {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-success {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.status-danger {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.pagination {
+    gap: 0.25rem;
+}
+
+.page-link {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border-color: transparent;
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .page-title { font-size: 1.5rem; }
+    .audit-table { font-size: 0.9rem; }
+}
+</style>
+{% endblock %}

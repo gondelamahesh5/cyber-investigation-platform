@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% block title %}Upload Evidence - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="evidence-form-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-upload me-2"></i>Upload Evidence
+                </h1>
+                <p class="page-subtitle">Upload and catalog digital evidence files</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('evidence.list_evidence') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Evidence
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <form method="POST" action="{{ url_for('evidence.upload_evidence') }}" enctype="multipart/form-data">
+                <!-- Case & Type Selection -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-folder-open me-2"></i>Case & Evidence Type</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="case_id" class="form-label required">Case *</label>
+                                <select class="form-select" id="case_id" name="case_id" required>
+                                    <option value="">Select case...</option>
+                                    {% for case in cases %}
+                                    <option value="{{ case.id }}">{{ case.case_number }} - {{ case.title[:40] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="evidence_type" class="form-label required">Evidence Type *</label>
+                                <select class="form-select" id="evidence_type" name="evidence_type" required>
+                                    <option value="">Select type...</option>
+                                    <option value="document">Document</option>
+                                    <option value="image">Image</option>
+                                    <option value="video">Video</option>
+                                    <option value="audio">Audio</option>
+                                    <option value="email">Email</option>
+                                    <option value="log">Log File</option>
+                                    <option value="binary">Binary/Executable</option>
+                                    <option value="network">Network Capture</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evidence Details -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>Evidence Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="title" class="form-label required">Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" required placeholder="Enter evidence title">
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" placeholder="Describe the evidence..."></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="source" class="form-label">Source</label>
+                                <input type="text" class="form-control" id="source" name="source" placeholder="Where evidence was obtained from">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="collection_method" class="form-label">Collection Method</label>
+                                <input type="text" class="form-control" id="collection_method" name="collection_method" placeholder="e.g., forensic copy, seizure, download">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Upload -->
+                <div class="card form-section-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-file-upload me-2"></i>File Upload</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="file" class="form-label required">Evidence File *</label>
+                            <input type="file" class="form-control" id="file" name="file" required>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Accepted formats: PDF, images (JPG, PNG, GIF), text files, CSV, Excel, EML, ZIP, DOC/DOCX
+                            </div>
+                        </div>
+                        
+                        <!-- File Upload Zone -->
+                        <div class="upload-zone" id="uploadZone">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <p class="upload-text">Drag and drop files here or click to browse</p>
+                            <p class="upload-hint">Maximum file size: 50MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('evidence.list_evidence') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Upload Evidence
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Drag and drop functionality
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('file');
+    
+    if (uploadZone && fileInput) {
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateUploadText(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                updateUploadText(e.target.files[0]);
+            }
+        });
+    }
+    
+    function updateUploadText(file) {
+        const uploadText = document.querySelector('.upload-text');
+        if (uploadText) {
+            uploadText.textContent = `Selected: ${file.name}`;
+        }
+    }
+    
+    // Form validation
+    $('form').on('submit', function(e) {
+        const caseId = $('#case_id').val();
+        const evidenceType = $('#evidence_type').val();
+        const title = $('#title').val().trim();
+        const file = $('#file')[0].files[0];
+        
+        if (!caseId || !evidenceType || !title) {
+            e.preventDefault();
+            alert('Please fill in all required fields');
+            return false;
+        }
+        
+        if (!file && !confirm('No file selected. Continue without file?')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.form-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.form-section-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+}
+
+.form-section-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #ff003c;
+}
+
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.form-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.form-text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.upload-zone {
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.upload-zone:hover {
+    border-color: rgba(0, 212, 255, 0.5);
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.upload-zone.drag-over {
+    border-color: #00d4ff;
+    background: rgba(0, 212, 255, 0.1);
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 4rem;
+    color: rgba(0, 212, 255, 0.5);
+    margin-bottom: 1rem;
+}
+
+.upload-text {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.upload-hint {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .upload-zone {
+        padding: 2rem 1rem;
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+    }
+}
+</style>
+{% endblock %}

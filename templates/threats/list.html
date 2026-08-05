@@ -1,0 +1,467 @@
+{% extends "base.html" %}
+{% block title %}Threat Intelligence - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="threats-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-biohazard me-2"></i>Threat Intelligence
+                </h1>
+                <p class="page-subtitle">Monitor and track cyber threats</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{{ url_for('threats.new_threat') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Threat Intel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card filter-card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-filter me-2"></i>Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-icon"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="Search threats...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="type">
+                        <option value="">All Types</option>
+                        {% for t in ['malware', 'phishing', 'ransomware', 'apt', 'ddos', 'zero_day', 'social_engineering', 'insider_threat', 'other'] %}
+                        <option value="{{ t }}" {% if threat_type == t %}selected{% endif %}>{{ t.replace('_', ' ')|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="severity">
+                        <option value="">All Severities</option>
+                        {% for s in ['critical', 'high', 'medium', 'low'] %}
+                        <option value="{{ s }}" {% if severity == s %}selected{% endif %}>{{ s|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i>Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Threats Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-list me-2"></i>Threat Intelligence Database
+                {% if threats.items %}
+                    <span class="badge bg-info ms-2">{{ threats.total }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 threats-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Severity</th>
+                            <th>Confidence</th>
+                            <th>Source</th>
+                            <th>Published</th>
+                            <th>Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for threat in threats.items %}
+                        <tr class="threat-row">
+                            <td>
+                                <a href="{{ url_for('threats.view_threat', threat_id=threat.id) }}" class="threat-title">
+                                    {{ threat.title[:50] }}{% if threat.title|length > 50 %}...{% endif %}
+                                </a>
+                                {% if threat.description %}
+                                    <br><small class="text-muted">{{ threat.description[:60] }}...</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge type-badge type-{{ threat.threat_type }}">
+                                    <i class="fas fa-bug me-1"></i>{{ threat.threat_type|replace('_', ' ')|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge severity-badge severity-{{ threat.severity }}">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ threat.severity|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="confidence-wrapper">
+                                    <div class="progress" style="height: 6px; width: 80px;">
+                                        <div class="progress-bar confidence-bar progress-{% if threat.confidence >= 75 %}critical{% elif threat.confidence >= 50 %}high{% else %}medium{% endif %}" style="width: {{ threat.confidence }}%;"></div>
+                                    </div>
+                                    <small class="confidence-text">{{ threat.confidence }}%</small>
+                                </div>
+                            </td>
+                            <td>{{ threat.source or 'N/A' }}</td>
+                            <td>{{ threat.published_date.strftime('%Y-%m-%d') if threat.published_date else 'N/A' }}</td>
+                            <td>
+                                <span class="badge status-badge status-{{ threat.status }}">
+                                    <i class="fas fa-circle me-1"></i>{{ threat.status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm action-btns">
+                                    <a href="{{ url_for('threats.view_threat', threat_id=threat.id) }}" class="btn btn-view" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('threats.edit_threat', threat_id=threat.id) }}" class="btn btn-edit" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('threats.delete_threat', threat_id=threat.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this threat intelligence?')">
+                                        <button type="submit" class="btn btn-delete" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fas fa-biohazard"></i>
+                                    <h4>No Threat Intelligence Found</h4>
+                                    <p class="text-muted">Start building your threat database by adding your first entry</p>
+                                    <a href="{{ url_for('threats.new_threat') }}" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>Add Threat Intel
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if threats.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if threats.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('threats.list_threats', page=threats.prev_num, search=search, type=threat_type, severity=severity) }}">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+            </li>
+            {% endif %}
+
+            {% for page_num in threats.iter_pages() %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == threats.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('threats.list_threats', page=page_num, search=search, type=threat_type, severity=severity) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if threats.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('threats.list_threats', page=threats.next_num, search=search, type=threat_type, severity=severity) }}">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.filter-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.input-group {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    z-index: 10;
+}
+
+.input-group .form-control {
+    padding-left: 2.75rem;
+}
+
+.threats-table {
+    margin-bottom: 0;
+}
+
+.threats-table thead {
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.threats-table th {
+    padding: 1rem;
+    font-weight: 600;
+    color: #00d4ff;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+}
+
+.threats-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.threats-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.threats-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.threat-title {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.threat-title:hover {
+    color: #00d4ff;
+    text-decoration: none;
+}
+
+.type-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.type-malware { background: rgba(255, 0, 60, 0.2); color: #ff003c; border: 1px solid rgba(255, 0, 60, 0.3); }
+.type-phishing { background: rgba(255, 149, 0, 0.2); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.3); }
+.type-ransomware { background: rgba(255, 0, 60, 0.2); color: #ff003c; border: 1px solid rgba(255, 0, 60, 0.3); }
+.type-apt { background: rgba(123, 44, 191, 0.2); color: #7b2cbf; border: 1px solid rgba(123, 44, 191, 0.3); }
+.type-ddos { background: rgba(0, 212, 255, 0.2); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.3); }
+.type-zero_day { background: rgba(255, 0, 60, 0.2); color: #ff003c; border: 1px solid rgba(255, 0, 60, 0.3); }
+.type-social_engineering { background: rgba(255, 149, 0, 0.2); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.3); }
+.type-insider_threat { background: rgba(123, 44, 191, 0.2); color: #7b2cbf; border: 1px solid rgba(123, 44, 191, 0.3); }
+.type-other { background: rgba(108, 117, 125, 0.2); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
+
+.severity-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.severity-critical {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.severity-high {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.severity-medium {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.severity-low {
+    background: rgba(123, 44, 191, 0.2);
+    color: #7b2cbf;
+    border: 1px solid rgba(123, 44, 191, 0.3);
+}
+
+.confidence-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.confidence-bar {
+    border-radius: 3px;
+}
+
+.confidence-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+}
+
+.status-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.status-inactive {
+    background: rgba(108, 117, 125, 0.2);
+    color: #adb5bd;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.action-btns {
+    gap: 0.25rem;
+}
+
+.btn-view {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.btn-view:hover {
+    background: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+    transform: translateY(-1px);
+}
+
+.btn-edit {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.btn-edit:hover {
+    background: rgba(255, 149, 0, 0.3);
+    color: #ff9500;
+    transform: translateY(-1px);
+}
+
+.btn-delete {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.btn-delete:hover {
+    background: rgba(255, 0, 60, 0.3);
+    color: #ff003c;
+    transform: translateY(-1px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.pagination {
+    gap: 0.25rem;
+}
+
+.page-link {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border-color: transparent;
+    color: #fff;
+}
+
+.page-item.disabled .page-link {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .threats-table {
+        font-size: 0.9rem;
+    }
+    
+    .action-btns {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Log Analysis Results - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="logs-view-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">Log Analysis Results</h1>
+                <p class="page-subtitle">{{ analysis.file_name }} ({{ analysis.log_type|title }})</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{{ url_for('analysis.analyze_logs') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="stat-icon stat-icon-primary">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <small class="text-muted">Total Entries</small>
+                        <div class="stat-value">{{ analysis.total_entries }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="stat-icon stat-icon-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <small class="text-muted">Suspicious</small>
+                        <div class="stat-value text-danger">{{ analysis.suspicious_entries }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="stat-icon stat-icon-warning">
+                        <i class="fas fa-user-secret"></i>
+                    </div>
+                    <div class="stat-content">
+                        <small class="text-muted">Brute Force</small>
+                        <div class="stat-value text-warning">{{ analysis.brute_force_attempts }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="stat-icon stat-icon-{% if analysis.severity == 'critical' or analysis.severity == 'high' %}danger{% elif analysis.severity == 'medium' %}warning{% else %}success{% endif %}">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <small class="text-muted">Severity</small>
+                        <div class="stat-value">{{ analysis.severity|upper }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card stat-card-sm">
+                <div class="card-body text-center">
+                    <div class="stat-number">{{ analysis.failed_logins }}</div>
+                    <small class="text-muted">Failed Logins</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-card-sm">
+                <div class="card-body text-center">
+                    <div class="stat-number">{{ analysis.successful_logins }}</div>
+                    <small class="text-muted">Successful Logins</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-card-sm">
+                <div class="card-body text-center">
+                    <div class="stat-number text-danger">{{ analysis.sql_injection_attempts }}</div>
+                    <small class="text-muted">SQL Injection</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-card-sm">
+                <div class="card-body text-center">
+                    <div class="stat-number text-danger">{{ analysis.xss_attempts }}</div>
+                    <small class="text-muted">XSS Attempts</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Details -->
+    <div class="row g-4">
+        <div class="col-xl-6">
+            <div class="card detail-section-card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-exclamation-triangle me-2"></i>Anomalies Detected</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="analysis-block">{{ analysis.anomalies_found or 'No anomalies detected' }}</pre>
+                </div>
+            </div>
+
+            <div class="card detail-section-card">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-chart-line me-2"></i>Patterns Detected</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="analysis-block">{{ analysis.patterns_detected or 'No patterns detected' }}</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card detail-section-card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-network-wired me-2"></i>Top IP Addresses</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="analysis-block">{{ analysis.ip_addresses or 'None found' }}</pre>
+                </div>
+            </div>
+
+            <div class="card detail-section-card">
+                <div class="card-header">
+                    <h6 class="card-title"><i class="fas fa-desktop me-2"></i>User Agents</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="analysis-block">{{ analysis.user_agents or 'None found' }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.1);
+}
+
+.stat-card .card-body {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-icon-primary {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+}
+
+.stat-icon-danger {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+}
+
+.stat-icon-warning {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+}
+
+.stat-icon-success {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.stat-content {
+    flex-grow: 1;
+}
+
+.stat-content small {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.stat-card-sm .stat-number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #00d4ff;
+}
+
+.detail-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.analysis-block {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .stat-card .card-body {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}

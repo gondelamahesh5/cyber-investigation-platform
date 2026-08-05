@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% block title %}Backup & Restore - Cyber Investigation Platform{% endblock %}
+
+{% block content %}
+<div class="backup-container">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-database me-2"></i>Backup & Restore
+                </h1>
+                <p class="page-subtitle">Manage system backups and restore points</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('settings.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Settings
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Backup Form -->
+    <div class="card form-section-card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-plus-circle me-2"></i>Create Backup</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('settings.backup') }}">
+                <div class="row g-3">
+                    <div class="col-md-4 mb-3">
+                        <label for="backup_type" class="form-label">Backup Type</label>
+                        <select class="form-select" id="backup_type" name="backup_type">
+                            <option value="full">Full Backup</option>
+                            <option value="partial">Partial Backup</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="description" name="description" placeholder="Optional description">
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Create Backup
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Backup History Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-history me-2"></i>Backup History
+                {% if backups %}
+                    <span class="badge bg-info ms-2">{{ backups|length }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 backup-table">
+                    <thead>
+                        <tr>
+                            <th>Backup Name</th>
+                            <th>Type</th>
+                            <th>Size</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for backup in backups %}
+                        <tr class="backup-row">
+                            <td class="font-monospace">{{ backup.backup_name }}</td>
+                            <td>{{ backup.backup_type|title }}</td>
+                            <td>{{ '%.2f KB'|format(backup.file_size / 1024) if backup.file_size else 'N/A' }}</td>
+                            <td>
+                                <span class="badge status-badge {% if backup.status == 'completed' %}status-success{% elif backup.status == 'failed' %}status-danger{% else %}status-warning{% endif %}">
+                                    <i class="fas fa-{% if backup.status == 'completed' %}check{% elif backup.status == 'failed' %}times{% else %}clock{% endif %} me-1"></i>
+                                    {{ backup.status|title }}
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ backup.created_at.strftime('%Y-%m-%d %H:%M') if backup.created_at else 'N/A' }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm action-btns">
+                                    <a href="{{ url_for('settings.download_backup', backup_id=backup.id) }}" class="btn btn-download" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('settings.restore_backup', backup_id=backup.id) }}" class="d-inline" onsubmit="return confirm('Restore this backup? This will overwrite current data.')">
+                                        <button type="submit" class="btn btn-restore" title="Restore">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('settings.delete_backup', backup_id=backup.id) }}" class="d-inline" onsubmit="return confirm('Delete this backup? This action cannot be undone.')">
+                                        <button type="submit" class="btn btn-delete" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fas fa-database"></i>
+                                    <h4>No Backups Created Yet</h4>
+                                    <p class="text-muted">Create your first backup using the form above</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.form-section-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+}
+
+.form-section-card .card-header {
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-card .card-title {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.form-select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.75rem;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25);
+    color: #fff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.backup-table thead {
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.backup-table th {
+    padding: 1rem;
+    font-weight: 600;
+    color: #00d4ff;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+}
+
+.backup-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.backup-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.backup-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.status-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-success {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.status-danger {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.status-warning {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.action-btns {
+    gap: 0.25rem;
+}
+
+.btn-download {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.btn-download:hover {
+    background: rgba(0, 255, 136, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-restore {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.btn-restore:hover {
+    background: rgba(0, 212, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-delete {
+    background: rgba(255, 0, 60, 0.2);
+    color: #ff003c;
+    border: 1px solid rgba(255, 0, 60, 0.3);
+}
+
+.btn-delete:hover {
+    background: rgba(255, 0, 60, 0.3);
+    transform: translateY(-1px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .page-title { font-size: 1.5rem; }
+    .backup-table { font-size: 0.9rem; }
+    .action-btns { flex-direction: column; }
+}
+</style>
+{% endblock %}
