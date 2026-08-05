@@ -94,7 +94,10 @@ def create_app(config_name='default'):
         os.makedirs(app.config['LOG_FOLDER'], exist_ok=True)
         os.makedirs(app.config['REPORT_FOLDER'], exist_ok=True)
         os.makedirs(app.config['BACKUP_FOLDER'], exist_ok=True)
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception as e:
+            app.logger.warning(f"Database initialization warning: {e}")
 
     return app
 
